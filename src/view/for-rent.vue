@@ -14,7 +14,10 @@ function showLoginModal() {
     <button @click="showLoginModal">测试</button>
     <div>for-rent.vue</div>
     <login ref="loginRef"/>
+
   </div>
+
+
 </template>
 
 <style scoped lang="scss">

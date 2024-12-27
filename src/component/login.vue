@@ -2,6 +2,8 @@
 import { ref } from "vue"
 import { NModal, NForm, NFormItem, NInput, NButton, NCard } from "naive-ui"
 import userApi from "@/api/user"
+import useUserStore from "@/store/user"
+import { useMessage } from "naive-ui"
 
 const show = ref(false)
 const formRef = ref()
@@ -22,36 +24,45 @@ const formRules = {
     {
       required: true,
       message: "请输入密码",
-      trigger: ["input" ],
+      trigger: ["input"],
     },
   ],
 }
 
+const userStore = useUserStore()
+const message = useMessage()
+
 //验证表单数据的有效性
 function validateForm() {
   formRef.value.validate((error: any) => {
+    //如果没有发生错误
     if (!error) {
-      console.log("验证通过")
-      userApi.login(formData.value).then((res:any) => {
-        console.log(res)
+      //验证账号和密码
+      userApi.login(formData.value).then((res) => {
+        //如果验证通过
+        if (res.code === 0) {
+          //保存token
+          userStore.setAccessToken(res.data.access_token)
+          //
+          message.success("登录成功")
+          //关闭模态框
+          show.value = false
+        } else {
+          //弹出错误信息
+          message.error(res.message)
+          //控制台打印详细的错误信息
+          console.log(res.err_detail)
+        }
       })
-    } else {
-      console.log("验证失败")
     }
   })
-
-  console.log(formData.value)
 }
 
 const openModal = () => {
   show.value = true
 }
 
-const closeModal = () => {
-  show.value = false
-}
-
-defineExpose({ openModal, closeModal })
+defineExpose({ openModal })
 </script>
 
 <template>
@@ -75,6 +86,9 @@ defineExpose({ openModal, closeModal })
       </n-form>
     </n-card>
   </n-modal>
+
+
+
 </template>
 
 <style scoped lang="scss"></style>
