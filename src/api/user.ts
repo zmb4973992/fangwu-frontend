@@ -1,13 +1,21 @@
 import request from "@/util/request.ts"
 
-type userLogin = {
+type login = {
   username: string
   password: string
 }
+
+type register = {
+  username: string
+  password: string
+}
+
 //
 const userApi = {
-  login: (param: userLogin) =>
-    request.post("/login", param).then((res:any) => res.data),
+  login: (param: login) =>
+    request.post("/login", param).then((res) => res.data),
+  register: (param: register) =>
+    request.post("/user", param).then((res) => res.data),
 }
 
 export default userApi
