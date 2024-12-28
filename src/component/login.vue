@@ -81,11 +81,11 @@ defineExpose({ openModal })
         label-width="auto"
         :rules="formRules"
       >
-        <n-form-item label="用户名" path="username">
-          <n-input v-model:value="formData.username" />
+        <n-form-item  path="username" label="用户名">
+          <n-input v-model:value="formData.username" placeholder="请输入用户名"/>
         </n-form-item>
-        <n-form-item label="密码" path="password">
-          <n-input v-model:value="formData.password" type="password" />
+        <n-form-item  path="password" label="密码">
+          <n-input v-model:value="formData.password" type="password" placeholder="请输入密码"/>
         </n-form-item>
         <n-flex justify="space-between">
           <n-button type="primary" @click="validateForm" style="width: 50%">
