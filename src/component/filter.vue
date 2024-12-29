@@ -6,10 +6,10 @@ import { ref } from "vue"
 import type { Ref } from "vue"
 
 const selectedOptions = reactive({
-  level3AdminDiv: null,
+  level3AdminDiv: {},
   maxPrice: null,
   minPrice: null,
-  rentType: null,
+  rentType: String,
 })
 
 type adminDiv = {
@@ -38,14 +38,14 @@ getOptions()
       <div>
         <span>位置：</span>
         <span v-for="level3AdminDiv in level3AdminDivs">
-          <n-button quaternary>{{ level3AdminDiv.name }}</n-button>
+          <n-button quaternary @click="selectedOptions.level3AdminDiv = level3AdminDiv">{{ level3AdminDiv.name }}</n-button>
         </span>
       </div>
       <!-- 月租金 -->
       <div style="display: flex;margin: 5px 0;">
         <span style="margin: auto 0">月租金：</span>
         <n-input-number
-          v-model="selectedOptions.minPrice"
+          v-model:value="selectedOptions.minPrice"
           :min="0"
           :show-button="false"
           style="width: 70px"
@@ -53,7 +53,7 @@ getOptions()
         />
         <span style="margin: auto 0">&nbsp;&nbsp;-&nbsp;&nbsp;</span>
         <n-input-number
-          v-model="selectedOptions.maxPrice"
+          v-model:value="selectedOptions.maxPrice"
           :min="0"
           :max="50000"
           :show-button="false"
@@ -66,10 +66,23 @@ getOptions()
       <!-- 租赁类型 -->
       <div style="display: flex;margin: 5px 0;">
         <span style="margin: auto 0">方式：</span>
-        <n-button quaternary>整租</n-button>
+        <n-button quaternary @click="selectedOptions.rentType = '整租'">整租</n-button>
         <n-button quaternary>合租/单间</n-button>
       </div>
     </n-card>
+
+    <div>
+      level3AdminDivs: {{ selectedOptions.level3AdminDiv }}
+    </div>
+    <div>
+      minPrice: {{ selectedOptions.minPrice }}
+    </div>
+    <div>
+      maxPrice: {{ selectedOptions.maxPrice }}
+    </div>
+    <div>
+      rentType: {{ selectedOptions.rentType }}
+    </div>
   </div>
 </template>
 
