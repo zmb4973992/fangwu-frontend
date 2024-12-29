@@ -1,7 +1,7 @@
 import request from "@/util/request.ts"
 
 type getList = {
-  dictionaryTypeName: string
+  dictionary_type_name: string
 }
 
 //
