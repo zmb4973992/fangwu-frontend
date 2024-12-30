@@ -263,6 +263,12 @@ async function fetchData() {
       右栏
     </n-flex>
   </n-flex>
+
+  <!-- 页脚 -->
+  <div style="text-align: center;">
+    <div>页脚1</div>
+    <div>页脚2</div>
+    </div>
 </template>
 
 <style scoped lang="scss">
