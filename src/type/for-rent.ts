@@ -1,7 +1,11 @@
 import type { file } from "./file.ts"
 import type { dictionaryDetailResult } from "./dictionary-detail.ts"
 import type { adminDivResult } from "./administrative-division.ts"
-import type { pagingResult } from "./paging.ts"
+import type { pagingRequest, pagingResult } from "./paging.ts"
+
+export type forRentRequest = pagingRequest & {
+  
+}
 
 export type forRentResult = {
   id?: number
@@ -16,6 +20,9 @@ export type forRentResult = {
   level_2_admin_div?: adminDivResult
   level_3_admin_div?: adminDivResult
   level_4_admin_div?: adminDivResult
+  community?: string
+  house_type?: dictionaryDetailResult
+  building_area?: number
 }
 
 export type forRentListResult = {

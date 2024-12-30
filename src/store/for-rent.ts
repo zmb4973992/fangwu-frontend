@@ -1,5 +1,7 @@
-import type { forRentListResult } from "@/type/for-rent"
+import type { forRentListResult } from "@/type/for-rent.ts"
 import { defineStore } from "pinia"
+
+
 
 const useForRentStore = defineStore("for-rent", {
   persist: true,
@@ -20,4 +22,5 @@ const useForRentStore = defineStore("for-rent", {
   },
 })
 
-export default useForRentStore
+
+export {  useForRentStore }
