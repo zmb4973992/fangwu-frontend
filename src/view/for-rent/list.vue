@@ -17,6 +17,7 @@ import forRentApi from "@/api/for-rent"
 import type { forRentListResult } from "@/type/for-rent"
 import type { adminDivResult } from "@/type/administrative-division"
 import type { dictionaryDetailResult } from "@/type/dictionary-detail"
+import Header from "@/component/header.vue"
 
 //筛选条件的类型
 type filterConditionList = {
@@ -75,14 +76,20 @@ const data: forRentListResult = reactive({
   list: [],
   paging: {
     page: 0,
-    page_size: 10,
+    page_size: 2,
     number_of_pages: 0,
     number_of_records: 0,
   },
 })
 
 watch(() => data.paging.page, fetchData)
-watch(() => data.paging.page_size, fetchData)
+watch(
+  () => data.paging.page_size,
+  () => {
+    data.paging.page = 1
+    fetchData()
+  }
+)
 
 fetchData()
 
@@ -99,8 +106,11 @@ async function fetchData() {
 </script>
 
 <template>
+  <!-- 头部区域 -->
+  <Header />
+
   <!-- 筛选条件 -->
-  <div class="main">
+  <n-flex class="main">
     <n-card>
       <!-- 位置 -->
       <div>
@@ -158,14 +168,8 @@ async function fetchData() {
         <n-button @click="clearSelectedCondition">清空筛选条件</n-button>
       </div>
     </n-card>
-
-    <div>level3AdminDivs: {{ selectedCondition.level3AdminDiv }}</div>
-    <div>minPrice: {{ selectedCondition.minPrice }}</div>
-    <div>maxPrice: {{ selectedCondition.maxPrice }}</div>
-    <div>rentType: {{ selectedCondition.rentType }}</div>
-  </div>
+  </n-flex>
   <button @click="showLoginModal">测试</button>
-  <div>for-rent.vue</div>
   <login ref="loginRef" />
 
   <!-- 数据列表 -->
@@ -178,7 +182,7 @@ async function fetchData() {
     "
   >
     <!-- 左栏 -->
-    <n-flex style="width: 80%; border: 1px solid #e3e3e3">
+    <n-flex vertical style="width: 80%; border: 1px solid #e3e3e3">
       <!-- 单条信息 -->
       <n-card
         v-for="item in data.list"
@@ -197,7 +201,7 @@ async function fetchData() {
           <n-flex style="width: 530px; border: 1px solid" vertical>
             <!-- 详情 -->
             <div style="font-size: 21px; font-weight: 600; margin-bottom: 5px">
-              <n-ellipsis>
+              <n-ellipsis :tooltip="false">
                 {{ item.description }}
               </n-ellipsis>
             </div>
@@ -235,7 +239,6 @@ async function fetchData() {
           </n-flex>
         </n-flex>
       </n-card>
-
       <!-- 分页器 -->
       <div
         style="
@@ -253,8 +256,6 @@ async function fetchData() {
           v-model:page-size="data.paging.page_size"
           size="large"
           show-quick-jumper
-          show-size-picker
-          :page-sizes="[10, 30, 50]"
         ></n-pagination>
       </div>
     </n-flex>
@@ -265,10 +266,10 @@ async function fetchData() {
   </n-flex>
 
   <!-- 页脚 -->
-  <div style="text-align: center;">
+  <div style="text-align: center">
     <div>页脚1</div>
     <div>页脚2</div>
-    </div>
+  </div>
 </template>
 
 <style scoped lang="scss">
