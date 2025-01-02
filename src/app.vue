@@ -4,11 +4,13 @@ import { zhCN } from "naive-ui"
 </script>
 
 <template>
-  <n-config-provider :locale="zhCN">
+  <div>
+    <n-config-provider :locale="zhCN">
     <n-message-provider>
-      <routerView />
+    <routerView />
     </n-message-provider>
-  </n-config-provider>
+    </n-config-provider>
+  </div>
 </template>
 
 <style scoped></style>

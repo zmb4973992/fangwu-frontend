@@ -9,6 +9,9 @@ const useUserStore = defineStore('user', {
         setAccessToken(accessToken: string) {
             this.accessToken = accessToken
         },
+        clearAccessToken() {
+            this.accessToken = ''
+        }
     },
     getters: {
 

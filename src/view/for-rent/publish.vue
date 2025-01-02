@@ -3,6 +3,7 @@ import administrativeDivisionApi from "@/api/administrative-division"
 import dictionaryDetailApi from "@/api/dictionary-detail"
 import Header from "@/component/header.vue"
 import { bathroom, bedroom, kitchen, livingRoom, tenant } from "@/constant"
+import useUserStore from "@/store/user"
 import type { adminDivResult } from "@/type/administrative-division"
 import type { dictionaryDetailResult } from "@/type/dictionary-detail"
 import {
@@ -14,10 +15,14 @@ import {
   NRadio,
   NInputNumber,
   NSelect,
+  NUpload,
+  NButton,
   type SelectOption,
   type FormRules,
+  type UploadFileInfo,
+  useMessage,
 } from "naive-ui"
-import { reactive, watch } from "vue"
+import { reactive, ref, watch } from "vue"
 
 //筛选条件的类型
 type formOptionList = {
@@ -85,6 +90,8 @@ async function getFormOption() {
 
 getFormOption()
 
+const userStore = useUserStore()
+
 const formData = reactive({
   rentType: null,
   description: null,
@@ -103,12 +110,9 @@ const formData = reactive({
   floor: null,
   totalFloor: null,
   orientation: null,
-  tenant:null,
-
-  gender: "",
-  houseType: "",
-  buildingArea: "",
-  files: [],
+  tenant: null,
+  //增加backendId字段，用于上传图片时携带后端生成的id
+  files: <(UploadFileInfo & { backendId: number })[]>[],
 })
 
 const formRule = reactive<FormRules>({
@@ -179,6 +183,49 @@ watch(
     })
   }
 )
+
+const message = useMessage()
+
+const handleError = (e: ProgressEvent) => {
+  console.log(e)
+}
+
+//图片成功上传的回调函数
+const handleUploadFinish = ({
+  //file用于获取上传文件的信息，event用于获取上传文件的响应结果
+  file,
+  event,
+}: {
+  //这是naive-ui规定的类型
+  file: UploadFileInfo
+  event?: ProgressEvent
+}) => {
+  //响应返回的response被转成了文本，需要通过Json.parse()转成对象
+  const response = JSON.parse((event?.target as XMLHttpRequest).response)
+  if (response.code == 0) {
+    for (let i = 0; i < response.data.length; i++) {
+      formData.files.push({
+        id: file.id,
+        name: file.name,
+        status: "finished",
+        backendId: response.data[i].file_id,
+      })
+    }
+  }
+}
+
+//图片删除后的回调函数
+function handleUploadRemove(data: {
+  //file是删除的文件，fileList是删除后的文件列表
+  file: UploadFileInfo
+  fileList: UploadFileInfo[]
+}) {
+  //删除图片后，需要把图片的相关信息从formData.files中删除
+  formData.files = formData.files.filter((item) => item.id !== data.file.id)
+}
+
+//图片上传前的回调函数
+
 </script>
 
 <template>
@@ -222,8 +269,6 @@ watch(
             >
             </n-input>
           </n-form-item>
-
-          
 
           <!-- 手机号码 -->
           <n-form-item label="手机号码" path="mobilePhone">
@@ -401,8 +446,9 @@ watch(
                 :key="item.id"
                 :value="item.name"
                 style="margin-left: 10px"
-                >{{ item.name }}</n-radio
               >
+                {{ item.name }}
+              </n-radio>
             </n-radio-group>
           </n-form-item>
 
@@ -417,10 +463,30 @@ watch(
             </n-select>
           </n-form-item>
 
+          <!-- 上传 -->
+          <n-form-item label="上传图片" path="fileIds">
+            <n-upload
+              name="file"
+              multiple
+              action="http://localhost:8000/upload/batch"
+              :headers="{
+                access_token: userStore.accessToken,
+              }"
+              @finish="handleUploadFinish"
+              list-type="image-card"
+              @remove="handleUploadRemove"
+              :default-file-list="formData.files"
+              :max="9"
+              accept=".jpg,.png,.jpeg"
+              :on-before-upload="beforeUpload"
+            >
+              上传图片
+            </n-upload>
+          </n-form-item>
         </n-form>
       </div>
 
-      <div style="width: 600px; text-align: center">
+      <!-- <div style="width: 600px; text-align: center">
         formData.rentType: {{ formData.rentType }}
       </div>
       <div style="width: 600px; text-align: center">
@@ -461,6 +527,30 @@ watch(
       </div>
       <div style="width: 600px; text-align: center">
         formData.kitchen: {{ formData.kitchen }}
+      </div>
+      <div style="width: 600px; text-align: center">
+        formData.floor: {{ formData.floor }}
+      </div>
+      <div style="width: 600px; text-align: center">
+        formData.totalFloor: {{ formData.totalFloor }}
+      </div>
+      <div style="width: 600px; text-align: center">
+        formData.area: {{ formData.area }}
+      </div>
+      <div style="width: 600px; text-align: center">
+        formData.orientation: {{ formData.orientation }}
+        </div>
+        <div style="width: 600px; text-align: center">
+          formData.genderRestriction: {{ formData.genderRestriction }}
+        </div>
+        <div style="width: 600px; text-align: center">
+          formData.tenant: {{ formData.tenant }}
+          </div> -->
+      <div style="width: 600px; text-align: center">
+        formData.fileIds: {{ formData.fileIds }}
+      </div>
+      <div style="width: 600px; text-align: center">
+        formData.files: {{ formData.files }}
       </div>
     </n-flex>
 

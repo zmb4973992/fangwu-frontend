@@ -56,6 +56,10 @@ const dropdownOptions = [
     label: "已发布的",
     key: "published",
   },
+  {
+    label: "退出",
+    key: "logout",
+  },
 ]
 
 function handleSelect(key: string) {
@@ -67,6 +71,10 @@ function handleSelect(key: string) {
     case "favorite":
       break
     case "published":
+      break
+    case "logout":
+      userStore.clearAccessToken()
+      break
   }
 }
 </script>
@@ -105,6 +113,7 @@ function handleSelect(key: string) {
       </n-button>
 
       <n-dropdown
+        v-else
         trigger="hover"
         :options="dropdownOptions"
         :show-arrow="true"
@@ -112,9 +121,7 @@ function handleSelect(key: string) {
         @select="handleSelect"
         style="text-align: center"
       >
-        <n-button v-if="userStore.accessToken" quaternary style="margin: auto">
-          我的
-        </n-button>
+        <n-button quaternary style="margin: auto">我的</n-button>
       </n-dropdown>
     </n-flex>
   </n-flex>

@@ -5,7 +5,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: "/",
     name: "首页",
-    redirect: { name: "租房列表" },
+    redirect: { name: "发布房源" },
   },
   {
     path: "/zufang",
