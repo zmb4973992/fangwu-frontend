@@ -225,7 +225,25 @@ function handleUploadRemove(data: {
 }
 
 //图片上传前的回调函数
+function beforeUpload(data: any) {
+  //判断文件类型，如果不是图片类型，则不允许上传
+  const isImage =
+    data.file.file?.type === "image/jpeg" ||
+    data.file.file?.type === "image/png"
+  if (!isImage) {
+    message.error("只能上传jpg/jpeg/png格式的图片")
+    return false
+  }
 
+  //判断文件大小，如果大于10mb，则不允许上传
+  const isLessThan10mb = data.file.file?.size / 1024 / 1024 < 10
+  if (!isLessThan10mb) {
+    message.error("单张图片的大小不能超过 10 mb")
+    return false
+  }
+
+  return true
+}
 </script>
 
 <template>
@@ -478,11 +496,20 @@ function handleUploadRemove(data: {
               :default-file-list="formData.files"
               :max="9"
               accept=".jpg,.png,.jpeg"
-              :on-before-upload="beforeUpload"
+              @before-upload="beforeUpload"
             >
               上传图片
             </n-upload>
           </n-form-item>
+
+          <div style="margin-left: 100px; margin-top: -15px">
+            <div>1.支持多张上传，最多可以上传20张图片，单张图片最大10M；</div>
+            <div>
+              2.多图房源点击量比非多图房源高出3-5倍。高质量室内图，有祝您快速出租！
+            </div>
+          </div>
+
+          
         </n-form>
       </div>
 
