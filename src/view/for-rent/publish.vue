@@ -25,6 +25,7 @@ import {
   type FormInst,
 } from "naive-ui"
 import { reactive, ref, watch } from "vue"
+import { useRouter } from "vue-router"
 
 //筛选条件的类型
 type formOptionList = {
@@ -132,7 +133,7 @@ const formRules = reactive<FormRules>({
   genderRestriction: {
     type: "number",
     required: true,
-    message: "请选择性别限制",
+    message: "请选择性别要求",
     trigger: ["input"],
   },
   mobilePhone: {
@@ -198,6 +199,20 @@ watch(
         value: item.code,
       }
     })
+  }
+)
+
+watch(
+  () => formData.rentType,
+  (newVal) => {
+    //rentType的值等于formOption里'整租'的id
+    if (
+      newVal ===
+      (formOption.rentType || []).filter((item) => item.name === "整租")[0].id
+    ) {
+      //清空合租户数的值
+      formData.tenant = null
+    }
   }
 )
 
@@ -272,6 +287,8 @@ function validateForm(e: MouseEvent) {
   })
 }
 
+const router = useRouter()
+
 //提交表单
 async function submitForm() {
   const res = await forRentApi.create({
@@ -301,13 +318,21 @@ async function submitForm() {
     tenant: formData.tenant == null ? 0 : formData.tenant,
   })
 
+  //如果提交失败，则提示错误信息，并打印日志
   if (res.code !== 0) {
     message.error(res.message)
     console.log(res.err_detail)
     return
   }
 
-  message.success("发布成功")
+  //如果提交成功
+  message.success("发布成功，即将跳转至房源详情页面...")
+  // 跳转到房源详情页面
+  console.log(res.data.id)
+  setTimeout(
+    () => router.push({ name: "房源详情", params: { id: res.data.id } }),
+    2000
+  )
 }
 </script>
 
@@ -318,8 +343,8 @@ async function submitForm() {
   <!-- 内容区域 -->
   <n-flex justify="center" style="width: 1280px">
     <!-- 左侧 -->
-    <n-flex justify="center" style="width: 70%; border: 1px solid #ccc">
-      <div style="margin-top: 20px; width: 700px; border: 1px solid #ccc">
+    <n-flex justify="center" style="width: 70%">
+      <div style="margin-top: 20px; width: 700px">
         <n-form
           ref="formRef"
           :label-width="100"
@@ -521,8 +546,8 @@ async function submitForm() {
             </n-select>
           </n-form-item>
 
-          <!-- 合租性别 -->
-          <n-form-item label="合租性别" path="genderRestriction">
+          <!-- 性别限制 -->
+          <n-form-item label="性别要求" path="genderRestriction">
             <n-radio-group v-model:value="formData.genderRestriction">
               <n-radio
                 v-for="item in formOption.genderRestriction"
@@ -536,7 +561,18 @@ async function submitForm() {
           </n-form-item>
 
           <!-- 合租户数 -->
-          <n-form-item label="合租户数" path="tenant">
+          <!-- 如果选了rentType，而且rentType的值等于formOption里'合租'的id，才显示这个选项 -->
+          <n-form-item
+            v-if="
+              formData.rentType &&
+              formData.rentType ===
+                (formOption.rentType || []).filter((item) => {
+                  return item.name === '合租'
+                })[0].id
+            "
+            label="合租户数"
+            path="tenant"
+          >
             <n-select
               v-model:value="formData.tenant"
               :options="formOption.tenant"
@@ -564,8 +600,6 @@ async function submitForm() {
             >
               上传图片
             </n-upload>
-
-            <n-button>手机扫码传图</n-button>
           </n-form-item>
 
           <div style="margin-left: 100px; margin-top: -15px">
@@ -581,8 +615,8 @@ async function submitForm() {
             <n-button
               type="primary"
               @click="validateForm"
-              style="width: 200px; height: 45px; font-size: 18px"
-              >提交</n-button
+              style="width: 200px; height: 45px; font-size: 22px"
+              >提 交</n-button
             >
           </div>
         </n-form>
@@ -648,10 +682,9 @@ async function submitForm() {
         <div style="width: 600px; text-align: center">
           formData.tenant: {{ formData.tenant }}
           </div> -->
-
-      <div style="width: 600px; text-align: center">
+      <!-- <div style="width: 600px; text-align: center">
         formData.files: {{ formData.files }}
-      </div>
+      </div> -->
     </n-flex>
 
     <!-- 右侧 -->

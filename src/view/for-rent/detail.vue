@@ -117,20 +117,24 @@ const show = ref(true)
             <!-- 当前无图或只有一张图片时禁用按钮 -->
             <template #arrow="{ prev, next }">
               <div class="custom-arrow">
-                <button
-                  class="custom-arrow--l"
+                <n-button
+                  type="primary"
+                  color="#7a7a7a"
+                  class="custom-arrow-l"
                   @click="prev"
                   :disabled="(data.files?.length || 0) <= 1 ? true : false"
                 >
                   上一张
-                </button>
-                <button
+                </n-button>
+                <n-button
+                  type="primary"
+                  color="#7a7a7a"
                   class="custom-arrow--r"
                   @click="next"
                   :disabled="(data.files?.length || 0) <= 1 ? true : false"
                 >
                   下一张
-                </button>
+                </n-button>
               </div>
             </template>
           </n-carousel>
@@ -370,25 +374,11 @@ const show = ref(true)
   display: flex;
   position: absolute;
   bottom: 25px;
-  right: 10px;
+  right: 30px;
 }
 
-.custom-arrow button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 70px;
-  height: 40px;
-  margin-right: 15px;
-  background-color: Gainsboro;
-  border-width: 0;
-  border-radius: 5px;
-  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  cursor: pointer;
+.custom-arrow-l {
+  margin-right: 10px;
 }
 
-.custom-arrow button:active {
-  transform: scale(0.95);
-  transform-origin: center;
-}
 </style>
