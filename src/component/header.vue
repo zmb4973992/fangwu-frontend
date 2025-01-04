@@ -6,6 +6,7 @@ import login from "@/component/login.vue"
 import { reactive, ref } from "vue"
 import administrativeDivisionApi from "@/api/administrative-division"
 import useUserStore from "@/store/user"
+import { useRouter } from "vue-router"
 
 const loginRef = ref()
 
@@ -62,9 +63,12 @@ const dropdownOptions = [
   },
 ]
 
+const router = useRouter()
+
 function handleSelect(key: string) {
   switch (key) {
     case "for-rent":
+      router.push({ name: "发布房源" })
       break
     case "seek-house":
       break
@@ -81,7 +85,10 @@ function handleSelect(key: string) {
 
 <template>
   <!-- 内容区域 -->
-  <n-flex justify="space-between" style="width: 1280px">
+  <n-flex
+    justify="space-between"
+    style="width: 100%; min-width: 1280px; border-bottom: 2px solid #62c76d"
+  >
     <!-- 左侧 -->
     <n-flex justify="center">
       <n-image :src="logo" height="40" />
