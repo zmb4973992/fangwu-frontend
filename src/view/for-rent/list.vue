@@ -97,6 +97,7 @@ async function fetchData() {
   const res = await forRentApi.getList({
     page: data.paging.page,
     page_size: data.paging.page_size,
+    desc: true,
   })
   if (res) {
     data.list = res.data.list
@@ -183,20 +184,24 @@ async function fetchData() {
     "
   >
     <!-- 左栏 -->
-    <n-flex vertical style="width: 80%; border: 1px solid #e3e3e3">
+    <n-flex vertical style="width: 80%; border: 1px solid #e3e3e3; gap: 0">
       <!-- 单条信息 -->
       <n-card
         v-for="item in data.list"
         :bordered="false"
         style="border-bottom: 1px solid #e3e3e3"
       >
-        <n-flex justify="space-between" style="border: 1px solid">
+        <n-flex justify="space-between">
           <!-- 左侧的图片 -->
           <n-image
-            width="200"
-            height="140"
-            src="https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg"
-            style="border: 1px solid #ccc"
+            width="240"
+            height="160"
+            :src="
+              item.files
+                ? item.files[0].download_path
+                : 'https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg'
+            "
+            object-fit="contain"
           />
           <!-- 中间的信息 -->
           <n-flex style="width: 530px; border: 1px solid" vertical>
@@ -210,32 +215,41 @@ async function fetchData() {
             <div style="display: flex; font-size: 16px; margin-bottom: 5px">
               <div>{{ item.rent_type?.name }}</div>
               <div v-show="item.rent_type"><n-divider vertical /></div>
-              <div>{{ item.house_type?.name }}</div>
-              <div><n-divider vertical v-show="item.house_type" /></div>
-              <div v-show="item.building_area">{{ item.building_area }}m²</div>
-              <div v-show="item.building_area"><n-divider vertical /></div>
+              <div>
+                <span v-if="item.bedroom">{{ item.bedroom }}</span>
+                <span v-if="item.bedroom">室</span>
+                <span v-if="item.livingRoom">{{ item.livingRoom }}</span>
+                <span v-if="item.livingRoom">厅</span>
+                <span v-if="item.bathroom">{{ item.bathroom }}</span>
+                <span v-if="item.bathroom">卫</span>
+                <span v-if="item.kitchen">{{ item.kitchen }}</span>
+                <span v-if="item.kitchen">厨</span>
+              </div>
+              <div><n-divider vertical /></div>
+              <div v-show="item.area">{{ item.area }}m²</div>
+              <div v-show="item.area"><n-divider vertical /></div>
               <div>{{ item.gender_restriction?.name }}</div>
             </div>
             <!-- 位置 -->
             <div style="display: flex; margin-bottom: 5px">
               <span>{{ item.level_3_admin_div?.name }}</span>
-              <span v-show="item.level_4_admin_div">-</span>
+              <span v-show="item.level_4_admin_div">&nbsp;-&nbsp;</span>
               <span>{{ item.level_4_admin_div?.name }}</span>
-              <span v-show="item.community">-</span>
+              <span v-show="item.community">&nbsp;-&nbsp;</span>
               <span>{{ item.community }}</span>
             </div>
           </n-flex>
           <!-- 右边的价格 -->
           <n-flex
-            style="width: 180px; border: 1px solid #ccc"
+            style="width: 145px; border: 1px solid #ccc"
             vertical
             justify="center"
           >
             <div style="margin: auto">
-              <span style="font-size: 28px; color: red; font-weight: 600">{{
+              <span style="font-size: 28px; color: green; font-weight: 600">{{
                 item.price
               }}</span>
-              <span>&nbsp;元/月</span>
+              <span style="color: green;">&nbsp;元/月</span>
             </div>
           </n-flex>
         </n-flex>

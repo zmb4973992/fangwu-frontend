@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import administrativeDivisionApi from "@/api/administrative-division"
 import dictionaryDetailApi from "@/api/dictionary-detail"
+import forRentApi from "@/api/for-rent"
 import Header from "@/component/header.vue"
 import { bathroom, bedroom, kitchen, livingRoom, tenant } from "@/constant"
 import useUserStore from "@/store/user"
@@ -21,6 +22,7 @@ import {
   type FormRules,
   type UploadFileInfo,
   useMessage,
+  type FormInst,
 } from "naive-ui"
 import { reactive, ref, watch } from "vue"
 
@@ -93,30 +95,31 @@ getFormOption()
 const userStore = useUserStore()
 
 const formData = reactive({
-  rentType: null,
-  description: null,
-  genderRestriction: null,
-  mobilePhone: null,
-  wechatId: null,
-  level3AdminDiv: null,
-  level4AdminDiv: null,
-  community: null,
-  area: null,
-  price: null,
-  bedroom: null,
-  livingRoom: null,
-  bathroom: null,
-  kitchen: null,
-  floor: null,
-  totalFloor: null,
-  orientation: null,
-  tenant: null,
+  rentType: <number | null>null,
+  description: <string>"",
+  genderRestriction: <number | null>null,
+  mobilePhone: <string>"",
+  wechatId: <string>"",
+  level3AdminDiv: <number | null>null,
+  level4AdminDiv: <number | null>null,
+  community: <string>"",
+  area: <number | null>null,
+  price: <number | null>null,
+  bedroom: <number | null>null,
+  livingRoom: <number | null>null,
+  bathroom: <number | null>null,
+  kitchen: <number | null>null,
+  floor: <number | null>null,
+  totalFloor: <number | null>null,
+  orientation: <number | null>null,
+  tenant: <number | null>null,
   //增加backendId字段，用于上传图片时携带后端生成的id
   files: <(UploadFileInfo & { backendId: number })[]>[],
 })
 
-const formRule = reactive<FormRules>({
+const formRules = reactive<FormRules>({
   rentType: {
+    type: "number",
     required: true,
     message: "请选择租赁类型",
     trigger: ["input"],
@@ -127,13 +130,27 @@ const formRule = reactive<FormRules>({
     trigger: ["input"],
   },
   genderRestriction: {
+    type: "number",
     required: true,
     message: "请选择性别限制",
     trigger: ["input"],
   },
   mobilePhone: {
-    required: true,
-    message: "请输入手机号码",
+    validator: (_, value) => {
+      if (!value && !formData.wechatId) {
+        return new Error("手机号或微信号至少填写一项")
+      }
+      return true
+    },
+    trigger: ["input"],
+  },
+  wechatId: {
+    validator: (_, value) => {
+      if (!value && !formData.mobilePhone) {
+        return new Error("手机号或微信号至少填写一项")
+      }
+      return true
+    },
     trigger: ["input"],
   },
   level3AdminDiv: {
@@ -150,7 +167,7 @@ const formRule = reactive<FormRules>({
   area: {
     type: "number",
     required: true,
-    message: "请填写面积（填写整数）",
+    message: "请填写面积",
     trigger: ["input"],
   },
   price: {
@@ -185,10 +202,6 @@ watch(
 )
 
 const message = useMessage()
-
-const handleError = (e: ProgressEvent) => {
-  console.log(e)
-}
 
 //图片成功上传的回调函数
 const handleUploadFinish = ({
@@ -244,6 +257,58 @@ function beforeUpload(data: any) {
 
   return true
 }
+
+const formRef = ref<FormInst | null>(null)
+
+function validateForm(e: MouseEvent) {
+  e.preventDefault()
+  formRef.value?.validate((errors: any) => {
+    if (errors) {
+      message.error("请根据提示填写相关信息")
+      return
+    }
+    //如果表单验证通过，则调用保存接口
+    submitForm()
+  })
+}
+
+//提交表单
+async function submitForm() {
+  const res = await forRentApi.create({
+    price: formData.price == null ? 0 : formData.price,
+    rent_type: formData.rentType == null ? 0 : formData.rentType,
+    description: formData.description,
+    gender_restriction:
+      formData.genderRestriction == null ? 0 : formData.genderRestriction,
+    mobile_phone: formData.mobilePhone == null ? "" : formData.mobilePhone,
+    wechat_id: formData.wechatId == null ? "" : formData.wechatId,
+    file_ids: formData.files.map((item) => item.backendId),
+    level_1_admin_div: 11,
+    level_2_admin_div: 1101,
+    level_3_admin_div:
+      formData.level3AdminDiv == null ? 0 : formData.level3AdminDiv,
+    level_4_admin_div:
+      formData.level4AdminDiv == null ? 0 : formData.level4AdminDiv,
+    community: formData.community,
+    area: formData.area == null ? 0 : formData.area,
+    bedroom: formData.bedroom == null ? 0 : formData.bedroom,
+    living_room: formData.livingRoom == null ? 0 : formData.livingRoom,
+    bathroom: formData.bathroom == null ? 0 : formData.bathroom,
+    kitchen: formData.kitchen == null ? 0 : formData.kitchen,
+    floor: formData.floor == null ? 0 : formData.floor,
+    total_floor: formData.totalFloor == null ? 0 : formData.totalFloor,
+    orientation: formData.orientation == null ? 0 : formData.orientation,
+    tenant: formData.tenant == null ? 0 : formData.tenant,
+  })
+
+  if (res.code !== 0) {
+    message.error(res.message)
+    console.log(res.err_detail)
+    return
+  }
+
+  message.success("发布成功")
+}
 </script>
 
 <template>
@@ -254,12 +319,12 @@ function beforeUpload(data: any) {
   <n-flex justify="center" style="width: 1280px">
     <!-- 左侧 -->
     <n-flex justify="center" style="width: 70%; border: 1px solid #ccc">
-      <div style="width: 700px; border: 1px solid #ccc">
+      <div style="margin-top: 20px; width: 700px; border: 1px solid #ccc">
         <n-form
           ref="formRef"
           :label-width="100"
           :model="formData"
-          :rules="formRule"
+          :rules="formRules"
           label-placement="left"
         >
           <!-- 租赁类型 -->
@@ -268,7 +333,7 @@ function beforeUpload(data: any) {
               <n-radio
                 v-for="item in formOption.rentType"
                 :key="item.id"
-                :value="item.name"
+                :value="item.id"
                 style="margin-left: 10px"
                 >{{ item.name }}</n-radio
               >
@@ -288,12 +353,12 @@ function beforeUpload(data: any) {
             </n-input>
           </n-form-item>
 
-          <!-- 手机号码 -->
-          <n-form-item label="手机号码" path="mobilePhone">
+          <!-- 手机号 -->
+          <n-form-item label="手机号" path="mobilePhone">
             <n-input
               v-model:value="formData.mobilePhone"
-              placeholder="请输入手机号码"
-              style="width: 200px"
+              placeholder="手机号或微信号至少填写一项"
+              style="width: 250px"
             >
             </n-input>
           </n-form-item>
@@ -302,8 +367,8 @@ function beforeUpload(data: any) {
           <n-form-item label="微信号" path="wechatId">
             <n-input
               v-model:value="formData.wechatId"
-              placeholder="请输入微信号"
-              style="width: 200px"
+              placeholder="手机号或微信号至少填写一项"
+              style="width: 250px"
             ></n-input>
           </n-form-item>
 
@@ -348,26 +413,26 @@ function beforeUpload(data: any) {
           <n-form-item label="面积" path="area">
             <n-input-number
               v-model:value="formData.area"
-              placeholder="请输入面积"
+              placeholder="请填写整数"
               :show-button="false"
               :precision="0"
               style="width: 100px"
             >
             </n-input-number>
-            <span style="margin-left: 10px">m²（请填写整数）</span>
+            <span style="margin-left: 10px">m²</span>
           </n-form-item>
 
           <!-- 租金 -->
           <n-form-item label="租金" path="price">
             <n-input-number
               v-model:value="formData.price"
-              placeholder="请输入租金"
+              placeholder="请填写整数"
               :show-button="false"
               :precision="0"
               style="width: 100px"
             >
             </n-input-number>
-            <span style="margin-left: 10px">元/月（请填写整数）</span>
+            <span style="margin-left: 10px">元/月</span>
           </n-form-item>
 
           <!-- 户型 -->
@@ -462,7 +527,7 @@ function beforeUpload(data: any) {
               <n-radio
                 v-for="item in formOption.genderRestriction"
                 :key="item.id"
-                :value="item.name"
+                :value="item.id"
                 style="margin-left: 10px"
               >
                 {{ item.name }}
@@ -482,7 +547,7 @@ function beforeUpload(data: any) {
           </n-form-item>
 
           <!-- 上传 -->
-          <n-form-item label="上传图片" path="fileIds">
+          <n-form-item label="本地上传" path="fileIds">
             <n-upload
               name="file"
               multiple
@@ -495,21 +560,31 @@ function beforeUpload(data: any) {
               @remove="handleUploadRemove"
               :default-file-list="formData.files"
               :max="9"
-              accept=".jpg,.png,.jpeg"
               @before-upload="beforeUpload"
             >
               上传图片
             </n-upload>
+
+            <n-button>手机扫码传图</n-button>
           </n-form-item>
 
           <div style="margin-left: 100px; margin-top: -15px">
-            <div>1.支持多张上传，最多可以上传20张图片，单张图片最大10M；</div>
             <div>
-              2.多图房源点击量比非多图房源高出3-5倍。高质量室内图，有祝您快速出租！
+              1.支持同时上传多张图片，最多可以上传20张图片，单张图片最大10mb；
+            </div>
+            <div>
+              2.多图房源点击量比无图房源高出3-5倍。上传高质量的室内图，有祝您快速出租！
             </div>
           </div>
 
-          
+          <div style="display: flex; justify-content: center; margin: 20px">
+            <n-button
+              type="primary"
+              @click="validateForm"
+              style="width: 200px; height: 45px; font-size: 18px"
+              >提交</n-button
+            >
+          </div>
         </n-form>
       </div>
 
@@ -573,9 +648,7 @@ function beforeUpload(data: any) {
         <div style="width: 600px; text-align: center">
           formData.tenant: {{ formData.tenant }}
           </div> -->
-      <div style="width: 600px; text-align: center">
-        formData.fileIds: {{ formData.fileIds }}
-      </div>
+
       <div style="width: 600px; text-align: center">
         formData.files: {{ formData.files }}
       </div>

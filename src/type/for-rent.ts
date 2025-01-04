@@ -21,8 +21,15 @@ export type forRentResult = {
   level_3_admin_div?: adminDivResult
   level_4_admin_div?: adminDivResult
   community?: string
-  house_type?: dictionaryDetailResult
-  building_area?: number
+  area?: number
+  bedroom?: number
+  livingRoom?: number
+  bathroom?: number
+  kitchen?: number
+  floor?: number
+  total_floor?: number
+  orientation?: dictionaryDetailResult
+  tenant?: number
 }
 
 export type forRentListResult = {
