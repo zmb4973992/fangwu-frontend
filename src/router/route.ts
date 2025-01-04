@@ -5,7 +5,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: "/",
     name: "首页",
-    redirect: { name: "发布房源" },
+    redirect: { name: "房源详情", params: { id: "9" } },
   },
   {
     path: "/zufang",
@@ -21,6 +21,22 @@ const routes: RouteRecordRaw[] = [
         name: "发布房源",
         component: () => import("@/view/for-rent/publish.vue"),
       },
+      {
+        path: "/zufang/detail/:id",
+        name: "房源详情",
+        component: () => import("@/view/for-rent/detail.vue"),
+        // 路由参数默认是string类型，需要转换成number类型，便于在组件中使用
+        props: (route) => ({ id: Number(route.params.id) }),
+        // 路由守卫
+        beforeEnter(to) {
+          // 路由参数必须是数字类型，如果不是则重定向到404页面
+          if (isNaN(Number(to.params.id))) {
+            return { name: "NotFound" }
+          }
+          // 路由守卫返回true，表示允许访问该页面
+          return true
+        },
+      },
     ],
   },
   {
@@ -30,7 +46,7 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: "/:pathMatch(.*)*",
-    name: "404",
+    name: "NotFound",
     component: notFound,
   },
 ]
