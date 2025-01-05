@@ -5,7 +5,7 @@ type getList = {
 }
 
 //
-const administrativeDivisionApi = {
+const adminDivApi = {
   getList: (param: getList) =>
     request
       .post("/administrative-division/list", param)
@@ -13,4 +13,4 @@ const administrativeDivisionApi = {
       .catch((err) => console.log(err)),
 }
 
-export default administrativeDivisionApi
+export default adminDivApi

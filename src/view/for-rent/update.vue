@@ -2,6 +2,7 @@
 import adminDivApi from "@/api/admin-div"
 import dictionaryDetailApi from "@/api/dictionary-detail"
 import forRentApi from "@/api/for-rent"
+import userApi from "@/api/user"
 import Header from "@/component/header.vue"
 import {
   availableCities,
@@ -36,51 +37,8 @@ import { useRouter } from "vue-router"
 
 const props = defineProps<{
   cityAbbr: string
+  id: number
 }>()
-
-const message = useMessage()
-const router = useRouter()
-const formData = reactive({
-  rentType: <number | null>null,
-  description: <string>"",
-  genderRestriction: <number | null>null,
-  mobilePhone: <string>"",
-  wechatId: <string>"",
-  level2AdminDiv: <number | null>null,
-  level3AdminDiv: <number | null>null,
-  level4AdminDiv: <number | null>null,
-  community: <string>"",
-  area: <number | null>null,
-  price: <number | null>null,
-  bedroom: <number | null>null,
-  livingRoom: <number | null>null,
-  bathroom: <number | null>null,
-  kitchen: <number | null>null,
-  floor: <number | null>null,
-  totalFloor: <number | null>null,
-  orientation: <number | null>null,
-  tenant: <number | null>null,
-  //增加backendId字段，用于上传图片时携带后端生成的id
-  files: <(UploadFileInfo & { backendId: number })[]>[],
-})
-
-//监听props的cityAbbr变化，获取2级行政区数据
-watch(
-  () => props.cityAbbr,
-  async () => {
-    //获取2级行政区列表
-    const city = availableCities.find((item) => item.abbr === props.cityAbbr)
-    //如果该城市或编码不存在
-    if (!city || !city.code) {
-      router.push({ name: "未找到" })
-    } else {
-      formData.level2AdminDiv = city.code
-    }
-  },
-  {
-    immediate: true,
-  }
-)
 
 //筛选条件的类型
 type formOptionList = {
@@ -149,6 +107,48 @@ async function getFormOption() {
 getFormOption()
 
 const userStore = useUserStore()
+
+const formData = reactive({
+  rentType: <number | null>null,
+  description: <string>"",
+  genderRestriction: <number | null>null,
+  mobilePhone: <string>"",
+  wechatId: <string>"",
+  level2AdminDiv: <number | null>null,
+  level3AdminDiv: <number | null>null,
+  level4AdminDiv: <number | null>null,
+  community: <string>"",
+  area: <number | null>null,
+  price: <number | null>null,
+  bedroom: <number | null>null,
+  livingRoom: <number | null>null,
+  bathroom: <number | null>null,
+  kitchen: <number | null>null,
+  floor: <number | null>null,
+  totalFloor: <number | null>null,
+  orientation: <number | null>null,
+  tenant: <number | null>null,
+  //增加backendId字段，用于上传图片时携带后端生成的id
+  files: <(UploadFileInfo & { backendId: number })[]>[],
+})
+
+//监听props的cityAbbr变化，获取2级行政区数据
+watch(
+  () => props.cityAbbr,
+  async () => {
+    //获取2级行政区列表
+    const city = availableCities.find((item) => item.abbr === props.cityAbbr)
+    //如果该城市或编码不存在
+    if (!city || !city.code) {
+      router.push({ name: "未找到" })
+    } else {
+      formData.level2AdminDiv = city.code
+    }
+  },
+  {
+    immediate: true,
+  }
+)
 
 const formRules = reactive<FormRules>({
   rentType: {
@@ -248,6 +248,8 @@ watch(
   }
 )
 
+const message = useMessage()
+
 //图片成功上传的回调函数
 function handleUploadFinish({
   //file用于获取上传文件的信息，event用于获取上传文件的响应结果
@@ -317,9 +319,12 @@ function validateForm(e: MouseEvent) {
   })
 }
 
+const router = useRouter()
+
 //提交表单
 async function submitForm() {
-  const res = await forRentApi.create({
+  const res = await forRentApi.update({
+    id: props.id,
     price: formData.price == null ? 0 : formData.price,
     rent_type: formData.rentType == null ? 0 : formData.rentType,
     description: formData.description,
@@ -354,17 +359,76 @@ async function submitForm() {
   }
 
   //如果提交成功
-  message.success("发布成功，即将跳转至房源详情页面...")
+  message.success("修改成功！即将跳转至房源详情页面...")
   // 跳转到房源详情页面
   setTimeout(
     () => router.push({ name: "房源详情", params: { id: res.data.id } }),
     2000
   )
 }
+
+async function getData() {
+  const res1 = await userApi.getCurrentUser()
+  console.log(res1)
+
+  const res2 = await forRentApi.get(props.id)
+  console.log(res2)
+
+  // 如果不成功，则跳转到404页面
+  if (res2.code !== 0) {
+    console.log(res2.err_detail)
+    router.push({ name: "未找到" })
+    return
+  }
+
+  // 如果发布人不是当前用户，则跳转到403页面
+  if (res2.data.creator !== res1.data.id) {
+    router.push({ name: "禁止访问" })
+    return
+  }
+
+  // 如果成功，则将数据填充到表单中
+  formData.rentType = res2.data.rent_type.id
+  formData.description = res2.data.description
+  formData.genderRestriction = res2.data.gender_restriction.id
+  formData.mobilePhone = res2.data.mobile_phone
+  formData.wechatId = res2.data.wechat_id
+  formData.level3AdminDiv = res2.data.level_3_admin_div.code
+  formData.level4AdminDiv = res2.data.level_4_admin_div.code
+  formData.community = res2.data.community
+  formData.area = res2.data.area
+  formData.price = res2.data.price
+  formData.bedroom = res2.data.bedroom
+  formData.livingRoom = res2.data.living_room
+  formData.bathroom = res2.data.bathroom
+  formData.kitchen = res2.data.kitchen
+  formData.floor = res2.data.floor
+  formData.totalFloor = res2.data.total_floor
+  formData.orientation = res2.data.orientation.id
+  formData.tenant = res2.data.tenant
+  for (let i = 0; i < res2.data.files?.length; i++) {
+    formData.files.push({
+      id: String(res2.data.files[i].id),
+      name: res2.data.files[i].name,
+      url: res2.data.files[i].url,
+      status: "finished",
+      backendId: res2.data.files[i].id,
+    })
+  }
+
+  // 获取联系方式
+  const res3 = await forRentApi.getContact(props.id)
+  if (res2.code !== 0) {
+    console.log(res2.err_detail)
+  }
+  formData.mobilePhone = res3.data.mobile_phone
+  formData.wechatId = res3.data.wechat_id
+}
+
+getData()
 </script>
 
 <template>
-  {{ props.cityAbbr }}
   <!-- 头部区域 -->
   <Header :cityAbbr="props.cityAbbr" />
 
@@ -649,70 +713,6 @@ async function submitForm() {
           </div>
         </n-form>
       </div>
-
-      <!-- <div style="width: 600px; text-align: center">
-        formData.rentType: {{ formData.rentType }}
-      </div>
-      <div style="width: 600px; text-align: center">
-        formData.description: {{ formData.description }}
-      </div>
-      <div style="width: 600px; text-align: center">
-        formData.genderRestriction: {{ formData.genderRestriction }}
-      </div>
-      <div style="width: 600px; text-align: center">
-        formData.mobilePhone: {{ formData.mobilePhone }}
-      </div>
-      <div style="width: 600px; text-align: center">
-        formData.wechatId: {{ formData.wechatId }}
-      </div>
-      <div style="width: 600px; text-align: center">
-        formData.level3AdminDiv: {{ formData.level3AdminDiv }}
-      </div>
-      <div style="width: 600px; text-align: center">
-        formData.level4AdminDiv: {{ formData.level4AdminDiv }}
-      </div>
-      <div style="width: 600px; text-align: center">
-        formData.community: {{ formData.community }}
-      </div>
-      <div style="width: 600px; text-align: center">
-        formData.area: {{ formData.area }}
-      </div>
-      <div style="width: 600px; text-align: center">
-        formData.price: {{ formData.price }}
-      </div>
-      <div style="width: 600px; text-align: center">
-        formData.bedroom: {{ formData.bedroom }}
-      </div>
-      <div style="width: 600px; text-align: center">
-        formData.livingRoom: {{ formData.livingRoom }}
-      </div>
-      <div style="width: 600px; text-align: center">
-        formData.bathroom: {{ formData.bathroom }}
-      </div>
-      <div style="width: 600px; text-align: center">
-        formData.kitchen: {{ formData.kitchen }}
-      </div>
-      <div style="width: 600px; text-align: center">
-        formData.floor: {{ formData.floor }}
-      </div>
-      <div style="width: 600px; text-align: center">
-        formData.totalFloor: {{ formData.totalFloor }}
-      </div>
-      <div style="width: 600px; text-align: center">
-        formData.area: {{ formData.area }}
-      </div>
-      <div style="width: 600px; text-align: center">
-        formData.orientation: {{ formData.orientation }}
-        </div>
-        <div style="width: 600px; text-align: center">
-          formData.genderRestriction: {{ formData.genderRestriction }}
-        </div>
-        <div style="width: 600px; text-align: center">
-          formData.tenant: {{ formData.tenant }}
-          </div> -->
-      <!-- <div style="width: 600px; text-align: center">
-        formData.files: {{ formData.files }}
-      </div> -->
     </n-flex>
 
     <!-- 右侧 -->

@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import forRentApi from "@/api/for-rent"
 import Header from "@/component/header.vue"
+import useUserStore from "@/store/user"
 import type { forRentResult } from "@/type/for-rent"
 import {
   NFlex,
@@ -9,27 +10,30 @@ import {
   NCarousel,
   NImageGroup,
   NImage,
+  useMessage,
 } from "naive-ui"
 import { reactive, ref } from "vue"
 import { useRouter } from "vue-router"
+import login from "@/component/login.vue"
 
-const props = defineProps({
-  id: {
-    type: Number,
-    required: true,
-  },
-})
+const props = defineProps<{
+  id: number
+  cityAbbr: string
+}>()
 
 const router = useRouter()
+const userStore = useUserStore()
+const loginRef = ref()
+const message = useMessage()
 
 const data = reactive<forRentResult>({})
 
 async function fetchData() {
   const res = await forRentApi.get(props.id)
-  // 如果不是成功的状态码，则跳转到404页面
+  // 如果不成功，则跳转到404页面
   if (res.code !== 0) {
-    console.log(res)
-    router.push({ name: "NotFound" })
+    console.log(res.err_detail)
+    router.push({ name: "未找到" })
     return
   }
 
@@ -56,12 +60,20 @@ async function fetchData() {
 }
 
 async function fetchContactData() {
+  //如果没登录
+  if (!userStore.accessToken) {
+    loginRef.value?.openModal()
+  }
+
   const res = await forRentApi.getContact(props.id)
   if (res.code !== 0) {
+    message.error(res.message)
     console.log(res.err_detail)
+    return
   }
   data.mobile_phone = formatPhoneNumber(res.data.mobile_phone)
   data.wechat_id = res.data.wechat_id
+  show.value = !show.value
 }
 
 fetchData()
@@ -78,7 +90,7 @@ const show = ref(true)
 </script>
 
 <template>
-  <Header />
+  <Header :cityAbbr="props.cityAbbr" />
   <n-flex vertical style="width: 1200px; margin: 20px auto">
     <!-- 上部信息 -->
     <n-flex vertical>
@@ -110,9 +122,9 @@ const show = ref(true)
           <n-carousel show-arrow>
             <img
               v-for="img in data.files"
-              :key="img.download_path"
+              :key="img.url"
               style="width: 100%; height: 525px; object-fit: contain"
-              :src="img.download_path"
+              :src="img.url"
             />
             <!-- 当前无图或只有一张图片时禁用按钮 -->
             <template #arrow="{ prev, next }">
@@ -275,7 +287,7 @@ const show = ref(true)
           <n-flex vertical v-if="show" style="height: 61px">
             <n-button
               type="primary"
-              @click="() => fetchContactData().then(() => (show = !show))"
+              @click="fetchContactData"
               style="
                 width: 300px;
                 height: 55px;
@@ -353,7 +365,7 @@ const show = ref(true)
                 width="419"
                 height="314"
                 object-fit="contain"
-                :src="item.download_path"
+                :src="item.url"
               >
               </n-image>
             </n-image-group>
@@ -367,6 +379,8 @@ const show = ref(true)
     <!-- 下部信息 -->
     <n-flex> 其他房源推荐 </n-flex>
   </n-flex>
+
+  <login ref="loginRef" />
 </template>
 
 <style scoped lang="scss">
@@ -380,5 +394,4 @@ const show = ref(true)
 .custom-arrow-l {
   margin-right: 10px;
 }
-
 </style>

@@ -26,6 +26,11 @@ type create = {
   tenant?: number
 }
 
+// 更新出租信息的请求参数类型
+type update = create & {
+  id: number
+}
+
 // 获取出租信息列表的请求参数类型
 type getList = pagingRequest & {
   rent_type?: number
@@ -33,6 +38,9 @@ type getList = pagingRequest & {
   max_price?: number
   gender_restriction?: number
   keyword?: string
+  level_2_admin_div?: number
+  level_3_admin_div?: number
+  level_4_admin_div?: number
 }
 
 // 出租信息接口
@@ -55,6 +63,13 @@ const forRentApi = {
   create: (param: create) =>
     request
       .post("/for-rent", param)
+      .then((res) => res.data)
+      .catch((err) => console.log(err)),
+
+  // 更新出租信息
+  update: (param: update) =>
+    request
+      .patch("/for-rent", param)
       .then((res) => res.data)
       .catch((err) => console.log(err)),
 
