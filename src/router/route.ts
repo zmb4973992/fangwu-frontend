@@ -1,11 +1,21 @@
 import type { RouteRecordRaw } from "vue-router"
 import { availableCityAbbr } from "@/constant"
+import useCityStore from "@/store/city"
+
+const cityStore = useCityStore()
 
 const routes: RouteRecordRaw[] = [
   {
     path: "",
     name: "首页",
-    redirect: { name: "房源列表", params: { cityAbbr: "bj" } },
+    redirect: { name: "我发布的房源", params: { cityAbbr: "bj" } },
+  },
+  {
+    path: "/:cityAbbr",
+    name: "城市首页",
+    props: true,
+    redirect: { name: "我发布的房源", params: { cityAbbr: cityStore.abbr } },
+    children: [],
   },
   {
     path: "/login",
@@ -68,9 +78,19 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
-    path: "/center",
+    path: "",
     name: "个人中心",
-    component: () => import("@/component/side-bar.vue"),
+    children: [
+      {
+        path: "/:cityAbbr/center/published",
+        name: "我发布的房源",
+        component: () => import("@/view/for-rent/published.vue"),
+        props: true,
+        meta: {
+          needLogin: true,
+        },
+      },
+    ],
   },
   {
     path: "/zhaofang",

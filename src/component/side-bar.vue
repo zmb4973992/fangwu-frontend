@@ -3,7 +3,7 @@ import { NFlex, NMenu, type MenuOption } from "naive-ui"
 import { h, ref } from "vue"
 import { RouterLink } from "vue-router"
 
-const activeKey = ref('skdfjksdfjksdfj')
+const activeKey = ref("skdfjksdfjksdfj")
 
 const menuOptions: MenuOption[] = [
   {
@@ -15,7 +15,7 @@ const menuOptions: MenuOption[] = [
             name: "首页",
           },
         },
-        { default: () => "首页" }
+        { default: () => "我发布的房源" }
       ),
     key: "首页",
   },
@@ -51,8 +51,7 @@ function handleUpdateValue(key: any, item: any) {
       :options="menuOptions"
       @update:value="handleUpdateValue"
       :indent="15"
-      :root-indent="20"
-      style="width: 200px"
+      style="width: 130px; background-color: #e3e3e3; text-align: center"
     >
     </n-menu>
   </n-flex>

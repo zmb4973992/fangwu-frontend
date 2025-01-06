@@ -1,6 +1,7 @@
 //行政区划
 export type adminDivResult = {
-  code: number
   name: string
+  code: number
+  parent_code: number
   pinyin_prefix: string
 }
