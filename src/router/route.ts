@@ -68,6 +68,11 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
+    path: "/center",
+    name: "个人中心",
+    component: () => import("@/component/side-bar.vue"),
+  },
+  {
     path: "/zhaofang",
     name: "找房",
     component: () => import("@/view/seek-house.vue"),

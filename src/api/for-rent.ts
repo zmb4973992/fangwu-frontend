@@ -33,6 +33,7 @@ type update = create & {
 
 // 获取出租信息列表的请求参数类型
 type getList = pagingRequest & {
+  created_by_myself?: boolean
   rent_type?: number
   min_price?: number
   max_price?: number

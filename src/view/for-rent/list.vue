@@ -8,9 +8,9 @@ import {
   NCard,
   NImage,
   NEllipsis,
-  NDivider,
   NButton,
   NInputNumber,
+  useMessage,
 } from "naive-ui"
 import forRentApi from "@/api/for-rent"
 import type { forRentListResult } from "@/type/for-rent"
@@ -18,7 +18,6 @@ import type { adminDivResult } from "@/type/admin-div"
 import type { dictionaryDetailResult } from "@/type/dictionary-detail"
 import Header from "@/component/header.vue"
 import { availableCities } from "@/constant"
-import { useMessage } from "naive-ui"
 import { useRouter } from "vue-router"
 import noImage from "@/asset/no-image.jpg"
 
@@ -26,17 +25,17 @@ const props = defineProps<{
   cityAbbr: string
 }>()
 
-const message = useMessage()
 const router = useRouter()
+const message = useMessage()
 
 //筛选条件的类型
-type filterConditionList = {
+type filterOptionResult = {
   level3AdminDiv?: adminDivResult[]
   rentType?: dictionaryDetailResult[]
 }
 
 //已选条件的类型
-type selectedConditionList = {
+type selectedOptionResult = {
   level2AdminDiv: adminDivResult
   level3AdminDiv?: adminDivResult
   level4AdminDiv?: adminDivResult
@@ -46,10 +45,10 @@ type selectedConditionList = {
 }
 
 //筛选条件的值
-const filterCondition = reactive<filterConditionList>({})
+const filterOption = reactive<filterOptionResult>({})
 
 //已选条件的值
-const selectedCondition = reactive<selectedConditionList>({
+const selectedOption = reactive<selectedOptionResult>({
   level2AdminDiv: {
     name: "",
     code: -1,
@@ -58,40 +57,43 @@ const selectedCondition = reactive<selectedConditionList>({
 })
 
 //获取筛选条件
-async function getFilterCondition() {
+async function getFilterOption() {
   try {
     const [res1, res2] = await Promise.all([
       adminDivApi.getList({
-        parent_code: selectedCondition.level2AdminDiv.code,
+        parent_code: selectedOption.level2AdminDiv.code,
       }),
-      dictionaryDetailApi.getList({ dictionary_type_name: "租赁类型" }),
+      dictionaryDetailApi.getList({
+        dictionary_type_name: "租赁类型",
+      }),
     ])
 
     if (res1) {
-      filterCondition.level3AdminDiv = res1.data.list
+      filterOption.level3AdminDiv = res1.data.list
     }
     if (res2) {
-      filterCondition.rentType = res2.data.list
+      filterOption.rentType = res2.data.list
     }
   } catch (error) {
+    message.error("获取筛选条件失败")
     console.error(error)
   }
 }
 
-getFilterCondition()
+getFilterOption()
 
 watch(
-  () => selectedCondition.level3AdminDiv,
+  () => selectedOption.level3AdminDiv,
   () => getData()
 )
 
 watch(
-  () => selectedCondition.rentType,
+  () => selectedOption.rentType,
   () => getData()
 )
 
 //清空已选条件
-const clearSelectedCondition = () => window.location.reload()
+const clearSelectedOption = () => window.location.reload()
 
 const data: forRentListResult = reactive({
   list: [],
@@ -114,16 +116,16 @@ watch(
     if (!city || !city.code) {
       router.push({ name: "首页" })
     } else {
-      selectedCondition.level2AdminDiv.name = city.name
-      selectedCondition.level2AdminDiv.code = city.code
-      if (selectedCondition.level3AdminDiv) {
-        selectedCondition.level3AdminDiv = undefined
+      selectedOption.level2AdminDiv.name = city.name
+      selectedOption.level2AdminDiv.code = city.code
+      if (selectedOption.level3AdminDiv) {
+        selectedOption.level3AdminDiv = undefined
       }
-      if (selectedCondition.level4AdminDiv) {
-        selectedCondition.level4AdminDiv = undefined
+      if (selectedOption.level4AdminDiv) {
+        selectedOption.level4AdminDiv = undefined
       }
     }
-    getFilterCondition()
+    getFilterOption()
     getData()
   },
   {
@@ -136,6 +138,7 @@ watch(
   (newValue) => {
     if (newValue) {
       getData()
+      scrollTo(0, 0)
     }
   }
 )
@@ -145,6 +148,7 @@ watch(
   () => {
     data.paging.page = 1
     getData()
+    scrollTo(0, 0)
   }
 )
 
@@ -153,11 +157,11 @@ async function getData() {
     page: data.paging.page,
     page_size: data.paging.page_size,
     desc: true,
-    level_2_admin_div: selectedCondition.level2AdminDiv.code,
-    level_3_admin_div: selectedCondition.level3AdminDiv?.code,
-    min_price: selectedCondition.minPrice,
-    max_price: selectedCondition.maxPrice,
-    rent_type: selectedCondition.rentType?.id,
+    level_2_admin_div: selectedOption.level2AdminDiv.code,
+    level_3_admin_div: selectedOption.level3AdminDiv?.code,
+    min_price: selectedOption.minPrice,
+    max_price: selectedOption.maxPrice,
+    rent_type: selectedOption.rentType?.id,
   })
   if (res) {
     data.list = res.data.list
@@ -194,14 +198,12 @@ function getDetail(id: number) {
       <n-flex :size="[3, 3]">
         <span style="margin: auto 0">位置：</span>
         <n-button
-          v-for="level3AdminDiv in filterCondition.level3AdminDiv"
+          v-for="level3AdminDiv in filterOption.level3AdminDiv"
           quaternary
-          :color="
-            selectedCondition.level3AdminDiv == level3AdminDiv ? 'red' : ''
-          "
+          :color="selectedOption.level3AdminDiv == level3AdminDiv ? 'red' : ''"
           @click="
             () => {
-              selectedCondition.level3AdminDiv = level3AdminDiv
+              selectedOption.level3AdminDiv = level3AdminDiv
               getData()
             }
           "
@@ -215,7 +217,7 @@ function getDetail(id: number) {
       <n-flex :size="[3, 3]" style="margin: 0 0">
         <span style="margin: auto 0">月租金：</span>
         <n-input-number
-          v-model:value="selectedCondition.minPrice"
+          v-model:value="selectedOption.minPrice"
           min="0"
           max="99999"
           :show-button="false"
@@ -223,7 +225,7 @@ function getDetail(id: number) {
         />
         <span style="margin: auto 0"> - </span>
         <n-input-number
-          v-model:value="selectedCondition.maxPrice"
+          v-model:value="selectedOption.maxPrice"
           min="0"
           max="99999"
           :show-button="false"
@@ -237,10 +239,10 @@ function getDetail(id: number) {
       <n-flex :size="[3, 3]" style="margin: 0 0">
         <span style="margin: auto 0">方式：</span>
         <n-button
-          v-for="rentType in filterCondition.rentType"
+          v-for="rentType in filterOption.rentType"
           quaternary
-          :color="selectedCondition.rentType == rentType ? 'red' : ''"
-          @click="selectedCondition.rentType = rentType"
+          :color="selectedOption.rentType == rentType ? 'red' : ''"
+          @click="selectedOption.rentType = rentType"
         >
           {{ rentType.name }}
         </n-button>
@@ -248,7 +250,7 @@ function getDetail(id: number) {
 
       <!-- 清空筛选条件 -->
       <n-flex :size="[3, 3]" style="margin: 5px 0">
-        <n-button @click="clearSelectedCondition">清空筛选条件</n-button>
+        <n-button @click="clearSelectedOption">清空筛选条件</n-button>
       </n-flex>
     </n-flex>
 
@@ -294,7 +296,7 @@ function getDetail(id: number) {
                         }
                       }
                     "
-                    style="cursor: pointer"
+                    class="description-title"
                   >
                     {{ item.description }}
                   </span>
@@ -302,50 +304,84 @@ function getDetail(id: number) {
               </n-flex>
               <!-- 属性 -->
               <n-flex
-                :size="[0, 0]"
+                :size="[10, 0]"
                 style="font-size: 16px; margin-bottom: 5px"
               >
-                <div>{{ item.rent_type?.name }}</div>
-                <div v-show="item.rent_type"><n-divider vertical /></div>
-                <div>
-                  <span v-if="item.bedroom">{{ item.bedroom }}</span>
-                  <span v-if="item.bedroom">室</span>
-                  <span v-if="item.livingRoom">{{ item.livingRoom }}</span>
+                <span v-if="item.rent_type">
+                  {{ item.rent_type?.name }}
+                </span>
+                <span
+                  v-if="
+                    item.bedroom ||
+                    item.livingRoom ||
+                    item.bathroom ||
+                    item.kitchen
+                  "
+                  style="color: #ccc"
+                  >|</span
+                >
+                <span
+                  v-if="
+                    item.bedroom ||
+                    item.livingRoom ||
+                    item.bathroom ||
+                    item.kitchen
+                  "
+                >
+                  <span v-if="item.bedroom">
+                    {{ item.bedroom }}
+                  </span>
+                  <span v-if="item.bedroom"> 室 </span>
+                  <span v-if="item.livingRoom">
+                    {{ item.livingRoom }}
+                  </span>
                   <span v-if="item.livingRoom">厅</span>
-                  <span v-if="item.bathroom">{{ item.bathroom }}</span>
+                  <span v-if="item.bathroom">
+                    {{ item.bathroom }}
+                  </span>
                   <span v-if="item.bathroom">卫</span>
-                  <span v-if="item.kitchen">{{ item.kitchen }}</span>
+                  <span v-if="item.kitchen">
+                    {{ item.kitchen }}
+                  </span>
                   <span v-if="item.kitchen">厨</span>
-                </div>
-                <div><n-divider vertical /></div>
-                <div v-show="item.area">{{ item.area }}m²</div>
-                <div v-show="item.area"><n-divider vertical /></div>
-                <div>{{ item.gender_restriction?.name }}</div>
-                <div v-show="item.gender_restriction">
-                  <n-divider vertical />
-                </div>
-                <div>{{ item.orientation?.name }}</div>
-                <div v-show="item.orientation"><n-divider vertical /></div>
-                <div>{{ item.tenant }}</div>
-                <div v-show="item.tenant">户合租</div>
-                <div v-show="item.tenant"><n-divider vertical /></div>
+                </span>
+                <span v-if="item.area" style="color: #ccc"> | </span>
+                <span v-if="item.area"> {{ item.area }}m² </span>
+                <span v-if="item.gender_restriction" style="color: #ccc">
+                  |
+                </span>
+                <span v-if="item.gender_restriction">
+                  {{ item.gender_restriction?.name }}
+                </span>
+                <span v-if="item.orientation" style="color: #ccc"> | </span>
+                <span v-if="item.orientation">
+                  {{ item.orientation?.name }}
+                </span>
+                <span v-if="item.tenant" style="color: #ccc"> | </span>
+                <span v-if="item.tenant">{{ item.tenant }}</span>
+                <span v-if="item.tenant">户合租</span>
               </n-flex>
               <!-- 位置 -->
               <n-flex :size="[3, 3]" style="margin-bottom: 5px">
                 <span>{{ item.level_3_admin_div?.name }}</span>
-                <span v-show="item.level_4_admin_div">-</span>
+                <span v-if="item.level_4_admin_div">-</span>
                 <span>{{ item.level_4_admin_div?.name }}</span>
-                <span v-show="item.community">-</span>
+                <span v-if="item.community">-</span>
                 <span>{{ item.community }}</span>
               </n-flex>
             </n-flex>
             <!-- 右边的价格 -->
             <n-flex style="width: 145px" vertical justify="center">
-              <div style="margin: auto">
-                <span style="font-size: 28px; color: green; font-weight: 600">{{
-                  item.price
-                }}</span>
+              <div v-if="item.price" style="margin: auto">
+                <span style="font-size: 28px; color: green; font-weight: 600">
+                  {{ item.price }}
+                </span>
                 <span style="color: green"> 元/月</span>
+              </div>
+              <div v-else style="margin: auto">
+                <span style="font-size: 25px; color: green; font-weight: 600">
+                  电话谈价
+                </span>
               </div>
             </n-flex>
           </n-flex>
@@ -369,8 +405,11 @@ function getDetail(id: number) {
           ></n-pagination>
         </div>
       </n-flex>
-      <!-- 右栏，预留广告位 -->
-      <n-flex style="width: calc(20% - 15px); border: 1px solid #ccc">
+      <!-- 右栏，预留位置，
+       高500px是为了统一滚动条，以后有内容了可以改 -->
+      <n-flex
+        style="width: calc(20% - 15px); height: 500px; border: 1px solid #ccc"
+      >
         右栏
       </n-flex>
     </n-flex>
@@ -382,4 +421,12 @@ function getDetail(id: number) {
   </div>
 </template>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.description-title {
+  cursor: pointer;
+}
+
+.description-title:hover {
+  color: green;
+}
+</style>

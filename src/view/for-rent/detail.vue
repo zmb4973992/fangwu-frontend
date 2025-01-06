@@ -28,7 +28,7 @@ const message = useMessage()
 
 const data = reactive<forRentResult>({})
 
-async function fetchData() {
+async function getData() {
   const res = await forRentApi.get(props.id)
   // 如果不成功，则跳转到404页面
   if (res.code !== 0) {
@@ -59,7 +59,7 @@ async function fetchData() {
   data.tenant = res.data.tenant
 }
 
-async function fetchContactData() {
+async function getContact() {
   //如果没登录
   if (!userStore.accessToken) {
     loginRef.value?.openModal()
@@ -71,22 +71,22 @@ async function fetchContactData() {
     console.log(res.err_detail)
     return
   }
-  data.mobile_phone = formatPhoneNumber(res.data.mobile_phone)
+  data.mobile_phone = formatMobilePhone(res.data.mobile_phone)
   data.wechat_id = res.data.wechat_id
-  show.value = !show.value
+  showContactButton.value = !showContactButton.value
 }
 
-fetchData()
+getData()
 
 //生成xxx-xxxx-xxx格式的手机号
-function formatPhoneNumber(phone: string | undefined): string | undefined {
+function formatMobilePhone(phone: string | undefined): string | undefined {
   if (phone?.length == 11) {
     return `${phone.slice(0, 3)}-${phone.slice(3, 7)}-${phone.slice(7, 11)}`
   }
   return phone
 }
 
-const show = ref(true)
+const showContactButton = ref(true)
 </script>
 
 <template>
@@ -167,13 +167,20 @@ const show = ref(true)
         <!-- 右侧文字 -->
         <n-flex vertical style="margin-left: 15px">
           <!-- 价格 -->
-          <n-flex style="border-bottom: 1px solid #ccc">
+          <n-flex v-if="data.price" style="border-bottom: 1px solid #ccc">
             <span
               style="font-size: 40px; font-weight: 600; margin: 0; color: green"
             >
               {{ data.price }}
             </span>
             <span style="margin: auto 0">元/月</span>
+          </n-flex>
+          <n-flex v-else style="border-bottom: 1px solid #ccc">
+            <span
+              style="font-size: 35px; font-weight: 600; margin: 0; color: green"
+            >
+              电话谈价
+            </span>
           </n-flex>
           <!-- 属性标签 -->
           <n-flex style="width: 471px; border-bottom: 1px solid #ccc">
@@ -214,7 +221,7 @@ const show = ref(true)
               vertical
               style="width: 149px; margin: 10px 0"
             >
-              <n-flex style="font-size: 18px"> {{ data.area }}&nbsp;m² </n-flex>
+              <n-flex style="font-size: 18px"> {{ data.area }} m²</n-flex>
               <n-flex style="font-size: 13px; color: gray">面积</n-flex>
             </n-flex>
             <!-- 朝向 -->
@@ -284,10 +291,10 @@ const show = ref(true)
             </div>
           </n-flex>
           <!-- 查看联系方式的按钮 -->
-          <n-flex vertical v-if="show" style="height: 61px">
+          <n-flex vertical v-if="showContactButton" style="height: 61px">
             <n-button
               type="primary"
-              @click="fetchContactData"
+              @click="getContact"
               style="
                 width: 300px;
                 height: 55px;
@@ -299,7 +306,7 @@ const show = ref(true)
             </n-button>
           </n-flex>
           <!-- 具体的联系方式 -->
-          <n-flex v-if="!show">
+          <n-flex v-if="!showContactButton">
             <!-- 手机号 -->
             <n-flex v-if="data.mobile_phone" vertical style="width: 47%">
               <n-flex style="font-size: 24px; font-weight: 600; color: green">
@@ -377,7 +384,7 @@ const show = ref(true)
     </n-flex>
 
     <!-- 下部信息 -->
-    <n-flex> 其他房源推荐 </n-flex>
+    <n-flex>其他房源推荐</n-flex>
   </n-flex>
 
   <login ref="loginRef" />

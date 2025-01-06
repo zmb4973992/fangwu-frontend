@@ -30,6 +30,7 @@ import {
   type UploadFileInfo,
   useMessage,
   type FormInst,
+  NSpin,
 } from "naive-ui"
 import { reactive, ref, watch } from "vue"
 import { useRouter } from "vue-router"
@@ -40,7 +41,12 @@ const props = defineProps<{
 
 const message = useMessage()
 const router = useRouter()
+const userStore = useUserStore()
+const uploadUrl =
+  import.meta.env.VITE_BASE_URL + import.meta.env.VITE_BATCH_UPLOAD_URL
+
 const formData = reactive({
+  loading: <boolean>false,
   rentType: <number | null>null,
   description: <string>"",
   genderRestriction: <number | null>null,
@@ -83,11 +89,12 @@ watch(
 )
 
 //筛选条件的类型
-type formOptionList = {
+type formOptionResult = {
   rentType?: dictionaryDetailResult[]
   genderRestriction?: dictionaryDetailResult[]
   level3AdminDiv?: adminDivResult[]
   level4AdminDiv?: adminDivResult[]
+  //下拉框需要使用这种类型
   bedroom?: SelectOption[]
   livingRoom?: SelectOption[]
   bathroom?: SelectOption[]
@@ -97,7 +104,7 @@ type formOptionList = {
 }
 
 //表单选项的值
-const formOption = reactive<formOptionList>({
+const formOption = reactive<formOptionResult>({
   bedroom,
   livingRoom,
   bathroom,
@@ -106,49 +113,51 @@ const formOption = reactive<formOptionList>({
 })
 
 async function getFormOption() {
-  const res1 = await dictionaryDetailApi.getList({
-    dictionary_type_name: "租赁类型",
-  })
-  if (res1) {
-    formOption.rentType = res1.data.list
-  }
+  try {
+    const [res1, res2, res3, res4] = await Promise.all([
+      dictionaryDetailApi.getList({
+        dictionary_type_name: "租赁类型",
+      }),
+      dictionaryDetailApi.getList({
+        dictionary_type_name: "性别限制",
+      }),
+      adminDivApi.getList({
+        parent_code: formData.level2AdminDiv || -1,
+      }),
+      dictionaryDetailApi.getList({
+        dictionary_type_name: "朝向",
+      }),
+    ])
 
-  const res2 = await dictionaryDetailApi.getList({
-    dictionary_type_name: "性别限制",
-  })
-  if (res2) {
-    formOption.genderRestriction = res2.data.list
-  }
-
-  //获取3级行政区划
-  const res3 = await adminDivApi.getList({
-    parent_code: formData.level2AdminDiv || -1,
-  })
-  if (res3) {
-    formOption.level3AdminDiv = res3.data.list.map((item: any) => {
-      return {
-        label: item.name,
-        value: item.code,
-      }
-    })
-  }
-
-  const res4 = await dictionaryDetailApi.getList({
-    dictionary_type_name: "朝向",
-  })
-  if (res4) {
-    formOption.orientation = res4.data.list.map((item: any) => {
-      return {
-        label: item.name,
-        value: item.id,
-      }
-    })
+    if (res1) {
+      formOption.rentType = res1.data.list
+    }
+    if (res2) {
+      formOption.genderRestriction = res2.data.list
+    }
+    if (res3) {
+      formOption.level3AdminDiv = res3.data.list.map((item: any) => {
+        return {
+          label: item.name,
+          value: item.code,
+        }
+      })
+    }
+    if (res4) {
+      formOption.orientation = res4.data.list.map((item: any) => {
+        return {
+          label: item.name,
+          value: item.id,
+        }
+      })
+    }
+  } catch (error) {
+    message.error("获取表单选项失败")
+    console.error(error)
   }
 }
 
 getFormOption()
-
-const userStore = useUserStore()
 
 const formRules = reactive<FormRules>({
   rentType: {
@@ -319,407 +328,354 @@ function validateForm(e: MouseEvent) {
 
 //提交表单
 async function submitForm() {
+  // 显示加载状态
+  formData.loading = true
+
   const res = await forRentApi.create({
     price: formData.price == null ? 0 : formData.price,
-    rent_type: formData.rentType == null ? 0 : formData.rentType,
+    rent_type: formData.rentType ?? 0,
     description: formData.description,
-    gender_restriction:
-      formData.genderRestriction == null ? 0 : formData.genderRestriction,
-    mobile_phone: formData.mobilePhone == null ? "" : formData.mobilePhone,
-    wechat_id: formData.wechatId == null ? "" : formData.wechatId,
+    gender_restriction: formData.genderRestriction ?? 0,
+    mobile_phone: formData.mobilePhone ?? undefined,
+    wechat_id: formData.wechatId ?? undefined,
     file_ids: formData.files.map((item) => item.backendId),
-    level_1_admin_div: 11,
-    level_2_admin_div: 1101,
-    level_3_admin_div:
-      formData.level3AdminDiv == null ? 0 : formData.level3AdminDiv,
-    level_4_admin_div:
-      formData.level4AdminDiv == null ? 0 : formData.level4AdminDiv,
+    level_2_admin_div: formData.level2AdminDiv ?? undefined,
+    level_3_admin_div: formData.level3AdminDiv ?? undefined,
+    level_4_admin_div: formData.level4AdminDiv ?? undefined,
     community: formData.community,
-    area: formData.area == null ? 0 : formData.area,
-    bedroom: formData.bedroom == null ? 0 : formData.bedroom,
-    living_room: formData.livingRoom == null ? 0 : formData.livingRoom,
-    bathroom: formData.bathroom == null ? 0 : formData.bathroom,
-    kitchen: formData.kitchen == null ? 0 : formData.kitchen,
-    floor: formData.floor == null ? 0 : formData.floor,
-    total_floor: formData.totalFloor == null ? 0 : formData.totalFloor,
-    orientation: formData.orientation == null ? 0 : formData.orientation,
-    tenant: formData.tenant == null ? 0 : formData.tenant,
+    area: formData.area ?? undefined,
+    bedroom: formData.bedroom ?? undefined,
+    living_room: formData.livingRoom ?? undefined,
+    bathroom: formData.bathroom ?? undefined,
+    kitchen: formData.kitchen ?? undefined,
+    floor: formData.floor ?? undefined,
+    total_floor: formData.totalFloor ?? undefined,
+    orientation: formData.orientation ?? undefined,
+    tenant: formData.tenant ?? undefined,
   })
 
   //如果提交失败，则提示错误信息，并打印日志
   if (res.code !== 0) {
     message.error(res.message)
     console.log(res.err_detail)
+    // 隐藏加载状态
+    formData.loading = false
     return
   }
 
-  //如果提交成功
-  message.success("发布成功，即将跳转至房源详情页面...")
-  // 跳转到房源详情页面
-  setTimeout(
-    () => router.push({ name: "房源详情", params: { id: res.data.id } }),
-    2000
-  )
+  setTimeout(() => {
+    // 隐藏加载状态
+    formData.loading = false
+    // 跳转到房源详情页面
+    router.push({
+      name: "房源详情",
+      params: {
+        id: res.data.id,
+        cityAbbr: props.cityAbbr,
+      },
+    })
+  }, 2000)
 }
 </script>
 
 <template>
-  {{ props.cityAbbr }}
-  <!-- 头部区域 -->
-  <Header :cityAbbr="props.cityAbbr" />
+  <n-spin :show="formData.loading">
+    <!-- 加载框的提示信息 -->
+    <template #description> 正在提交，请稍等...</template>
+    <!-- 头部区域 -->
+    <Header :cityAbbr="props.cityAbbr" />
 
-  <!-- 内容区域 -->
-  <n-flex justify="center" style="width: 1280px">
-    <!-- 左侧 -->
-    <n-flex justify="center" style="width: 70%">
-      <div style="margin-top: 20px; width: 700px">
-        <n-form
-          ref="formRef"
-          :label-width="100"
-          :model="formData"
-          :rules="formRules"
-          label-placement="left"
-        >
-          <!-- 租赁类型 -->
-          <n-form-item label="类型" path="rentType">
-            <n-radio-group v-model:value="formData.rentType">
-              <n-radio
-                v-for="item in formOption.rentType"
-                :key="item.id"
-                :value="item.id"
-                style="margin-left: 10px"
-                >{{ item.name }}</n-radio
-              >
-            </n-radio-group>
-          </n-form-item>
-
-          <!-- 详细说明 -->
-          <n-form-item label="详细说明" path="description">
-            <n-input
-              type="textarea"
-              :autosize="{ minRows: 6, maxRows: 8 }"
-              placeholder="请输入内容"
-              v-model:value="formData.description"
-              maxlength="1000"
-              show-count
-            >
-            </n-input>
-          </n-form-item>
-
-          <!-- 手机号 -->
-          <n-form-item label="手机号" path="mobilePhone">
-            <n-input
-              v-model:value="formData.mobilePhone"
-              placeholder="手机号或微信号至少填写一项"
-              style="width: 250px"
-            >
-            </n-input>
-          </n-form-item>
-
-          <!-- 微信号 -->
-          <n-form-item label="微信号" path="wechatId">
-            <n-input
-              v-model:value="formData.wechatId"
-              placeholder="手机号或微信号至少填写一项"
-              style="width: 250px"
-            ></n-input>
-          </n-form-item>
-
-          <!-- 位置 -->
-          <n-flex>
-            <n-form-item
-              label="位置"
-              path="level3AdminDiv"
-              style="width: 250px"
-            >
-              <n-select
-                v-model:value="formData.level3AdminDiv"
-                :options="formOption.level3AdminDiv"
-                placeholder="请选择区县"
-              >
-              </n-select>
+    <!-- 内容区域 -->
+    <n-flex justify="center" style="width: 1280px">
+      <!-- 左侧 -->
+      <n-flex justify="center" style="width: 70%">
+        <div style="margin-top: 20px; width: 700px">
+          <n-form
+            ref="formRef"
+            :label-width="100"
+            :model="formData"
+            :rules="formRules"
+            label-placement="left"
+          >
+            <!-- 租赁类型 -->
+            <n-form-item label="类型" path="rentType">
+              <n-radio-group v-model:value="formData.rentType">
+                <n-radio
+                  v-for="item in formOption.rentType"
+                  :key="item.id"
+                  :value="item.id"
+                  style="margin-left: 10px"
+                >
+                  {{ item.name }}
+                </n-radio>
+              </n-radio-group>
             </n-form-item>
 
-            <n-form-item path="level4AdminDiv" style="width: 160px">
-              <n-select
-                v-model:value="formData.level4AdminDiv"
-                :options="formOption.level4AdminDiv"
-                placeholder="请选择乡/镇/街道"
+            <!-- 详细说明 -->
+            <n-form-item label="详细说明" path="description">
+              <n-input
+                type="textarea"
+                :autosize="{ minRows: 6, maxRows: 8 }"
+                placeholder="请输入内容"
+                v-model:value="formData.description"
+                maxlength="1000"
+                show-count
               >
-              </n-select>
-            </n-form-item>
-          </n-flex>
-
-          <!-- 小区 -->
-          <n-form-item label="小区名称" path="community">
-            <n-input
-              placeholder="请输入小区名称"
-              v-model:value="formData.community"
-              maxlength="20"
-              show-count
-              style="width: 400px"
-            >
-            </n-input>
-          </n-form-item>
-
-          <!-- 面积 -->
-          <n-form-item label="面积" path="area">
-            <n-input-number
-              v-model:value="formData.area"
-              placeholder="请填写整数"
-              :show-button="false"
-              :precision="0"
-              style="width: 100px"
-            >
-            </n-input-number>
-            <span style="margin-left: 10px">m²</span>
-          </n-form-item>
-
-          <!-- 租金 -->
-          <n-form-item label="租金" path="price">
-            <n-input-number
-              v-model:value="formData.price"
-              placeholder="请填写整数"
-              :show-button="false"
-              :precision="0"
-              style="width: 100px"
-            >
-            </n-input-number>
-            <span style="margin-left: 10px">元/月</span>
-          </n-form-item>
-
-          <!-- 户型 -->
-          <n-flex>
-            <!-- 卧室数量 -->
-            <n-form-item label="户型" path="bedroom">
-              <n-select
-                v-model:value="formData.bedroom"
-                :options="formOption.bedroom"
-                placeholder="卧室数量"
-                style="width: 120px"
-              >
-              </n-select>
+              </n-input>
             </n-form-item>
 
-            <!-- 客厅数量 -->
-            <n-form-item path="livingRoom">
-              <n-select
-                v-model:value="formData.livingRoom"
-                :options="formOption.livingRoom"
-                placeholder="客厅数量"
-                style="width: 120px"
+            <!-- 手机号 -->
+            <n-form-item label="手机号" path="mobilePhone">
+              <n-input
+                v-model:value="formData.mobilePhone"
+                placeholder="手机号或微信号至少填写一项"
+                style="width: 250px"
               >
-              </n-select>
+              </n-input>
             </n-form-item>
 
-            <!-- 卫生间数量 -->
-            <n-form-item path="bathroom">
-              <n-select
-                v-model:value="formData.bathroom"
-                :options="formOption.bathroom"
-                placeholder="卫生间数量"
-                style="width: 120px"
-              >
-              </n-select>
+            <!-- 微信号 -->
+            <n-form-item label="微信号" path="wechatId">
+              <n-input
+                v-model:value="formData.wechatId"
+                placeholder="手机号或微信号至少填写一项"
+                style="width: 250px"
+              ></n-input>
             </n-form-item>
 
-            <!-- 厨房数量 -->
-            <n-form-item path="kitchen">
-              <n-select
-                v-model:value="formData.kitchen"
-                :options="formOption.kitchen"
-                placeholder="厨房数量"
-                style="width: 120px"
+            <!-- 位置 -->
+            <n-flex>
+              <n-form-item
+                label="位置"
+                path="level3AdminDiv"
+                style="width: 250px"
               >
-              </n-select>
-            </n-form-item>
-          </n-flex>
+                <n-select
+                  v-model:value="formData.level3AdminDiv"
+                  :options="formOption.level3AdminDiv"
+                  placeholder="请选择区县"
+                >
+                </n-select>
+              </n-form-item>
 
-          <!-- 楼层 -->
-          <n-flex>
-            <n-form-item label="楼层" path="floor" style="width: 250px">
+              <n-form-item path="level4AdminDiv" style="width: 160px">
+                <n-select
+                  v-model:value="formData.level4AdminDiv"
+                  :options="formOption.level4AdminDiv"
+                  placeholder="请选择乡/镇/街道"
+                >
+                </n-select>
+              </n-form-item>
+            </n-flex>
+
+            <!-- 小区 -->
+            <n-form-item label="小区名称" path="community">
+              <n-input
+                placeholder="请输入小区名称"
+                v-model:value="formData.community"
+                maxlength="20"
+                show-count
+                style="width: 400px"
+              >
+              </n-input>
+            </n-form-item>
+
+            <!-- 面积 -->
+            <n-form-item label="面积" path="area">
               <n-input-number
-                v-model:value="formData.floor"
-                placeholder="请输入楼层"
+                v-model:value="formData.area"
+                placeholder="请填写整数"
                 :show-button="false"
                 :precision="0"
                 style="width: 100px"
               >
               </n-input-number>
-              <span style="margin-left: 10px">楼</span>
+              <span style="margin-left: 10px">m²</span>
             </n-form-item>
 
-            <n-form-item path="totalFloor" style="width: 200px">
-              <span style="margin-left: 10px">总楼层：</span>
+            <!-- 租金 -->
+            <n-form-item label="租金" path="price">
               <n-input-number
-                v-model:value="formData.totalFloor"
-                placeholder="请输入总楼层"
+                v-model:value="formData.price"
+                placeholder="请填写整数"
                 :show-button="false"
                 :precision="0"
-                style="width: 110px"
+                style="width: 100px"
               >
               </n-input-number>
-              <span style="margin-left: 10px">楼</span>
+              <span style="margin-left: 10px">元/月</span>
             </n-form-item>
-          </n-flex>
 
-          <!-- 朝向 -->
-          <n-form-item label="朝向" path="orientation">
-            <n-select
-              v-model:value="formData.orientation"
-              :options="formOption.orientation"
-              placeholder="请选择朝向"
-              style="width: 120px"
-            >
-            </n-select>
-          </n-form-item>
+            <!-- 户型 -->
+            <n-flex>
+              <!-- 卧室数量 -->
+              <n-form-item label="户型" path="bedroom">
+                <n-select
+                  v-model:value="formData.bedroom"
+                  :options="formOption.bedroom"
+                  placeholder="卧室数量"
+                  style="width: 120px"
+                >
+                </n-select>
+              </n-form-item>
 
-          <!-- 性别限制 -->
-          <n-form-item label="性别要求" path="genderRestriction">
-            <n-radio-group v-model:value="formData.genderRestriction">
-              <n-radio
-                v-for="item in formOption.genderRestriction"
-                :key="item.id"
-                :value="item.id"
-                style="margin-left: 10px"
+              <!-- 客厅数量 -->
+              <n-form-item path="livingRoom">
+                <n-select
+                  v-model:value="formData.livingRoom"
+                  :options="formOption.livingRoom"
+                  placeholder="客厅数量"
+                  style="width: 120px"
+                >
+                </n-select>
+              </n-form-item>
+
+              <!-- 卫生间数量 -->
+              <n-form-item path="bathroom">
+                <n-select
+                  v-model:value="formData.bathroom"
+                  :options="formOption.bathroom"
+                  placeholder="卫生间数量"
+                  style="width: 120px"
+                >
+                </n-select>
+              </n-form-item>
+
+              <!-- 厨房数量 -->
+              <n-form-item path="kitchen">
+                <n-select
+                  v-model:value="formData.kitchen"
+                  :options="formOption.kitchen"
+                  placeholder="厨房数量"
+                  style="width: 120px"
+                >
+                </n-select>
+              </n-form-item>
+            </n-flex>
+
+            <!-- 楼层 -->
+            <n-flex>
+              <n-form-item label="楼层" path="floor" style="width: 250px">
+                <n-input-number
+                  v-model:value="formData.floor"
+                  placeholder="请输入楼层"
+                  :show-button="false"
+                  :precision="0"
+                  style="width: 100px"
+                >
+                </n-input-number>
+                <span style="margin-left: 10px">楼</span>
+              </n-form-item>
+
+              <n-form-item path="totalFloor" style="width: 200px">
+                <span style="margin-left: 10px">总楼层：</span>
+                <n-input-number
+                  v-model:value="formData.totalFloor"
+                  placeholder="请输入总楼层"
+                  :show-button="false"
+                  :precision="0"
+                  style="width: 110px"
+                >
+                </n-input-number>
+                <span style="margin-left: 10px">楼</span>
+              </n-form-item>
+            </n-flex>
+
+            <!-- 朝向 -->
+            <n-form-item label="朝向" path="orientation">
+              <n-select
+                v-model:value="formData.orientation"
+                :options="formOption.orientation"
+                placeholder="请选择朝向"
+                style="width: 120px"
               >
-                {{ item.name }}
-              </n-radio>
-            </n-radio-group>
-          </n-form-item>
+              </n-select>
+            </n-form-item>
 
-          <!-- 合租户数 -->
-          <!-- 如果选了rentType，而且rentType的值等于formOption里'合租'的id，
+            <!-- 性别限制 -->
+            <n-form-item label="性别要求" path="genderRestriction">
+              <n-radio-group v-model:value="formData.genderRestriction">
+                <n-radio
+                  v-for="item in formOption.genderRestriction"
+                  :key="item.id"
+                  :value="item.id"
+                  style="margin-left: 10px"
+                >
+                  {{ item.name }}
+                </n-radio>
+              </n-radio-group>
+            </n-form-item>
+
+            <!-- 合租户数 -->
+            <!-- 如果选了rentType，
+             而且rentType的值等于formOption里'合租'的id，
           才显示这个选项 -->
-          <n-form-item
-            v-if="
-              formData.rentType &&
-              formData.rentType ===
-                (formOption.rentType || []).filter((item) => {
-                  return item.name === '合租'
-                })[0].id
-            "
-            label="合租户数"
-            path="tenant"
-          >
-            <n-select
-              v-model:value="formData.tenant"
-              :options="formOption.tenant"
-              placeholder="请选择"
-              style="width: 120px"
+            <n-form-item
+              v-if="
+                formData.rentType &&
+                formData.rentType ===
+                  (formOption.rentType || []).filter((item) => {
+                    return item.name === '合租'
+                  })[0].id
+              "
+              label="合租户数"
+              path="tenant"
             >
-            </n-select>
-          </n-form-item>
+              <n-select
+                v-model:value="formData.tenant"
+                :options="formOption.tenant"
+                placeholder="请选择"
+                style="width: 120px"
+              >
+              </n-select>
+            </n-form-item>
 
-          <!-- 上传 -->
-          <n-form-item label="本地上传" path="fileIds">
-            <n-upload
-              multiple
-              list-type="image-card"
-              action="http://localhost:8000/upload/batch"
-              :headers="{
-                access_token: userStore.accessToken,
-              }"
-              @finish="handleUploadFinish"
-              @remove="handleUploadRemove"
-              @before-upload="beforeUpload"
-              :default-file-list="formData.files"
-              :max="9"
-            >
-              上传图片
-            </n-upload>
-          </n-form-item>
+            <!-- 上传 -->
+            <n-form-item label="本地上传" path="fileIds">
+              <n-upload
+                multiple
+                list-type="image-card"
+                :action="uploadUrl"
+                :headers="{
+                  access_token: userStore.accessToken,
+                }"
+                @finish="handleUploadFinish"
+                @remove="handleUploadRemove"
+                @before-upload="beforeUpload"
+                :default-file-list="formData.files"
+                :max="9"
+              >
+                上传图片
+              </n-upload>
+            </n-form-item>
 
-          <div style="margin-left: 100px; margin-top: -15px">
-            <div>
-              1.支持同时上传多张图片，最多可以上传9张图片，单张图片最大10mb；
+            <div style="margin-left: 100px; margin-top: -15px">
+              <div>
+                1.支持同时上传多张图片，最多可以上传9张图片，单张图片最大10mb；
+              </div>
+              <div>
+                2.多图房源点击量比无图房源高出3-5倍。上传高质量的室内图，有祝您快速出租！
+              </div>
             </div>
-            <div>
-              2.多图房源点击量比无图房源高出3-5倍。上传高质量的室内图，有祝您快速出租！
+
+            <div style="display: flex; justify-content: center; margin: 20px">
+              <n-button
+                type="primary"
+                @click="validateForm"
+                style="width: 200px; height: 45px; font-size: 22px"
+                >提 交</n-button
+              >
             </div>
-          </div>
-
-          <div style="display: flex; justify-content: center; margin: 20px">
-            <n-button
-              type="primary"
-              @click="validateForm"
-              style="width: 200px; height: 45px; font-size: 22px"
-              >提 交</n-button
-            >
-          </div>
-        </n-form>
-      </div>
-
-      <!-- <div style="width: 600px; text-align: center">
-        formData.rentType: {{ formData.rentType }}
-      </div>
-      <div style="width: 600px; text-align: center">
-        formData.description: {{ formData.description }}
-      </div>
-      <div style="width: 600px; text-align: center">
-        formData.genderRestriction: {{ formData.genderRestriction }}
-      </div>
-      <div style="width: 600px; text-align: center">
-        formData.mobilePhone: {{ formData.mobilePhone }}
-      </div>
-      <div style="width: 600px; text-align: center">
-        formData.wechatId: {{ formData.wechatId }}
-      </div>
-      <div style="width: 600px; text-align: center">
-        formData.level3AdminDiv: {{ formData.level3AdminDiv }}
-      </div>
-      <div style="width: 600px; text-align: center">
-        formData.level4AdminDiv: {{ formData.level4AdminDiv }}
-      </div>
-      <div style="width: 600px; text-align: center">
-        formData.community: {{ formData.community }}
-      </div>
-      <div style="width: 600px; text-align: center">
-        formData.area: {{ formData.area }}
-      </div>
-      <div style="width: 600px; text-align: center">
-        formData.price: {{ formData.price }}
-      </div>
-      <div style="width: 600px; text-align: center">
-        formData.bedroom: {{ formData.bedroom }}
-      </div>
-      <div style="width: 600px; text-align: center">
-        formData.livingRoom: {{ formData.livingRoom }}
-      </div>
-      <div style="width: 600px; text-align: center">
-        formData.bathroom: {{ formData.bathroom }}
-      </div>
-      <div style="width: 600px; text-align: center">
-        formData.kitchen: {{ formData.kitchen }}
-      </div>
-      <div style="width: 600px; text-align: center">
-        formData.floor: {{ formData.floor }}
-      </div>
-      <div style="width: 600px; text-align: center">
-        formData.totalFloor: {{ formData.totalFloor }}
-      </div>
-      <div style="width: 600px; text-align: center">
-        formData.area: {{ formData.area }}
-      </div>
-      <div style="width: 600px; text-align: center">
-        formData.orientation: {{ formData.orientation }}
+          </n-form>
         </div>
-        <div style="width: 600px; text-align: center">
-          formData.genderRestriction: {{ formData.genderRestriction }}
-        </div>
-        <div style="width: 600px; text-align: center">
-          formData.tenant: {{ formData.tenant }}
-          </div> -->
-      <!-- <div style="width: 600px; text-align: center">
-        formData.files: {{ formData.files }}
-      </div> -->
-    </n-flex>
+      </n-flex>
 
-    <!-- 右侧 -->
-    <n-flex style="width: calc(30% - 20px); border: 1px solid #ccc">
-      广告
+      <!-- 右侧 -->
+      <n-flex style="width: calc(30% - 20px); border: 1px solid #ccc">
+        广告
+      </n-flex>
     </n-flex>
-  </n-flex>
+  </n-spin>
 </template>
 
 <style lang="scss" scoped></style>

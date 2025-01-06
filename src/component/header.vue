@@ -7,9 +7,8 @@ import { reactive, ref } from "vue"
 import adminDivApi from "@/api/admin-div"
 import useUserStore from "@/store/user"
 import { useRouter } from "vue-router"
-import { ChevronDown12Regular } from "@vicons/fluent"
-import { Icon } from "@vicons/utils"
 import { availableCities } from "@/constant"
+import Down from "@/asset/svg/down.svg"
 
 const loginRef = ref()
 
@@ -117,9 +116,23 @@ const props = defineProps<{ cityAbbr: string }>()
                   (item) => item.abbr === props.cityAbbr
                 )[0].name
               }}
-              <Icon size="14" style="margin-left: 5px">
-                <ChevronDown12Regular />
-              </Icon>
+              <svg
+                t="1736139676973"
+                class="icon"
+                viewBox="0 0 1024 1024"
+                version="1.1"
+                xmlns="http://www.w3.org/2000/svg"
+                p-id="9898"
+                width="18"
+                height="15"
+                style="margin-left: 6px"
+              >
+                <path
+                  d="M511.609097 961.619254M511.906879 662.759609 511.906879 662.759609 129.831974 280.679587c-14.788821-14.762215-38.777165-14.762215-53.585429 0-14.788821 14.812357-14.788821 38.799678 0 53.607942l405.851425 405.805376c0.867764 1.107217 1.824555 2.190899 2.843768 3.206018 14.808264 14.788821 38.795585 14.788821 53.585429 0l408.230612-408.226518c14.807241-14.808264 14.807241-38.795585 0-53.584406-14.767332-14.785751-38.754652-14.785751-53.562916 0L511.906879 662.759609 511.906879 662.759609zM511.906879 662.759609"
+                  fill="#272636"
+                  p-id="9899"
+                ></path>
+              </svg>
             </n-button>
           </template>
           <!-- 选择城市的内容区域 -->
