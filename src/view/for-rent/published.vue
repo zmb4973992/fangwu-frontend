@@ -12,7 +12,7 @@ import {
   NEllipsis,
   NPopconfirm,
 } from "naive-ui"
-import { h, reactive } from "vue"
+import { h, reactive, watch } from "vue"
 import { useRouter } from "vue-router"
 import type { DataTableColumns, SelectOption } from "naive-ui"
 import type { forRentListResult, forRentResult } from "@/type/for-rent"
@@ -46,6 +46,22 @@ const selectedOption = reactive<selectedOptionResult>({
   type: "for-rent",
 })
 
+watch(
+  () => selectedOption.type,
+  (newValue) => {
+    switch (newValue) {
+      case "for-rent":
+        getForRentData()
+        break
+      case "seek-house":
+        data.list = []
+
+        break
+    }
+  },
+  { immediate: true }
+)
+
 const data: forRentListResult = reactive({
   list: [],
   paging: {
@@ -56,7 +72,7 @@ const data: forRentListResult = reactive({
   },
 })
 
-async function getData() {
+async function getForRentData() {
   const res = await forRentApi.getList({
     page: data.paging.page,
     page_size: data.paging.page_size,
@@ -69,7 +85,7 @@ async function getData() {
   }
 }
 
-getData()
+getForRentData()
 
 function getRecord(id: number) {
   const href = router.resolve({
@@ -95,7 +111,7 @@ async function deleteRecord(id: number) {
     return
   }
   message.success("删除成功")
-  getData()
+  getForRentData()
 }
 
 const columns = createColumns({
@@ -244,7 +260,7 @@ function createColumns({
 
 <template>
   <!-- 页面布局 -->
-  <div style="min-width: 1280px; height: 100vh; background-color: #f1f1f1">
+  <n-flex style="min-width: 1280px; background-color: #f1f1f1">
     <!-- 头部区域 -->
     <Header />
 
@@ -255,6 +271,7 @@ function createColumns({
         width: 1280px;
         margin: 0 auto;
         padding-top: 20px;
+        padding-bottom: 20px;
       "
     >
       <!-- 左侧的侧边栏 -->
@@ -275,13 +292,18 @@ function createColumns({
           </n-radio-group>
         </n-flex>
         <!-- 数据表格 -->
-        <n-flex style="width: 1060px; background-color: white; padding: 20px">
-          <n-data-table :columns="columns" :data="data.list" :bordered="false">
+        <div style="width: 1060px; background-color: white; padding: 20px">
+          <n-data-table
+            :columns="columns"
+            :data="data.list"
+            :bordered="false"
+            style="min-height:calc(100vh - 210px);"
+          >
           </n-data-table>
-        </n-flex>
+        </div>
       </n-flex>
     </n-flex>
-  </div>
+  </n-flex>
 </template>
 
 <style scoped lang="scss">
