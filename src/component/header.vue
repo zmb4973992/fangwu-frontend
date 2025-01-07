@@ -3,39 +3,18 @@ import { NImage, useMessage } from "naive-ui"
 import logo from "@/asset/logo.jpg"
 import { NFlex, NButton, NDropdown, NPopover } from "naive-ui"
 import login from "@/component/login.vue"
-import { reactive, ref } from "vue"
-import adminDivApi from "@/api/admin-div"
+import {  ref } from "vue"
 import useUserStore from "@/store/user"
 import { useRouter } from "vue-router"
-import { availableCities } from "@/constant"
-import Down from "@/asset/svg/down.svg"
+import useCityStore from "@/store/city"
 
 const loginRef = ref()
-
 const message = useMessage()
+const cityStore = useCityStore()
 
 function showLoginModal() {
   loginRef.value.openModal()
 }
-
-//筛选条件的值
-const filterCondition = reactive({
-  level2AdminDiv: undefined,
-})
-
-async function getFilterCondition() {
-  const res1 = await adminDivApi.getList({ parent_code: 33 })
-  if (res1) {
-    filterCondition.level2AdminDiv = res1.data.list.map((item: any) => {
-      return {
-        label: item.name,
-        value: item.code,
-      }
-    })
-  }
-}
-
-getFilterCondition()
 
 const userStore = useUserStore()
 
@@ -78,12 +57,15 @@ function handleSelect(key: string) {
     case "logout":
       userStore.clearAccessToken()
       message.success("成功退出")
-      router.push({ name: "首页", params: { cityAbbr: "bj" } })
+      router.push({ name: "首页" })
       break
   }
 }
 
-const props = defineProps<{ cityAbbr: string }>()
+function selectCity(cityName: string) {
+  cityStore.setCity(cityName)
+  router.push({ name: "房源列表" })
+}
 </script>
 
 <template>
@@ -110,12 +92,7 @@ const props = defineProps<{ cityAbbr: string }>()
         <n-popover trigger="hover" placement="bottom-start">
           <template #trigger>
             <n-button quaternary style="margin: auto 0">
-              {{
-                // 在可用城市的数组中进行过滤，找到当前城市的名称
-                availableCities.filter(
-                  (item) => item.abbr === props.cityAbbr
-                )[0].name
-              }}
+              {{ cityStore.name }}
               <svg
                 t="1736139676973"
                 class="icon"
@@ -148,12 +125,7 @@ const props = defineProps<{ cityAbbr: string }>()
                   quaternary
                   size="small"
                   class="city-btn"
-                  @click="
-                    router.push({
-                      name: '房源列表',
-                      params: { cityAbbr: 'bj' },
-                    })
-                  "
+                  @click="selectCity('北京')"
                 >
                   北京
                 </n-button>
@@ -161,12 +133,7 @@ const props = defineProps<{ cityAbbr: string }>()
                   quaternary
                   size="small"
                   class="city-btn"
-                  @click="
-                    router.push({
-                      name: '房源列表',
-                      params: { cityAbbr: 'bd' },
-                    })
-                  "
+                  @click="selectCity('保定')"
                 >
                   保定
                 </n-button>
@@ -180,12 +147,7 @@ const props = defineProps<{ cityAbbr: string }>()
                   quaternary
                   size="small"
                   class="city-btn"
-                  @click="
-                    router.push({
-                      name: '房源列表',
-                      params: { cityAbbr: 'cq' },
-                    })
-                  "
+                  @click="selectCity('重庆')"
                 >
                   重庆
                 </n-button>
@@ -193,12 +155,7 @@ const props = defineProps<{ cityAbbr: string }>()
                   quaternary
                   size="small"
                   class="city-btn"
-                  @click="
-                    router.push({
-                      name: '房源列表',
-                      params: { cityAbbr: 'cd' },
-                    })
-                  "
+                  @click="selectCity('成都')"
                 >
                   成都
                 </n-button>
@@ -206,12 +163,7 @@ const props = defineProps<{ cityAbbr: string }>()
                   quaternary
                   size="small"
                   class="city-btn"
-                  @click="
-                    router.push({
-                      name: '房源列表',
-                      params: { cityAbbr: 'cs' },
-                    })
-                  "
+                  @click="selectCity('长沙')"
                 >
                   长沙
                 </n-button>
@@ -219,12 +171,7 @@ const props = defineProps<{ cityAbbr: string }>()
                   quaternary
                   size="small"
                   class="city-btn"
-                  @click="
-                    router.push({
-                      name: '房源列表',
-                      params: { cityAbbr: 'cc' },
-                    })
-                  "
+                  @click="selectCity('长春')"
                 >
                   长春
                 </n-button>
@@ -238,12 +185,7 @@ const props = defineProps<{ cityAbbr: string }>()
                   quaternary
                   size="small"
                   class="city-btn"
-                  @click="
-                    router.push({
-                      name: '房源列表',
-                      params: { cityAbbr: 'fz' },
-                    })
-                  "
+                  @click="selectCity('福州')"
                 >
                   福州
                 </n-button>
@@ -251,12 +193,7 @@ const props = defineProps<{ cityAbbr: string }>()
                   quaternary
                   size="small"
                   class="city-btn"
-                  @click="
-                    router.push({
-                      name: '房源列表',
-                      params: { cityAbbr: 'gz' },
-                    })
-                  "
+                  @click="selectCity('广州')"
                 >
                   广州
                 </n-button>
@@ -264,12 +201,7 @@ const props = defineProps<{ cityAbbr: string }>()
                   quaternary
                   size="small"
                   class="city-btn"
-                  @click="
-                    router.push({
-                      name: '房源列表',
-                      params: { cityAbbr: 'gy' },
-                    })
-                  "
+                  @click="selectCity('贵阳')"
                 >
                   贵阳
                 </n-button>
@@ -283,12 +215,7 @@ const props = defineProps<{ cityAbbr: string }>()
                   quaternary
                   size="small"
                   class="city-btn"
-                  @click="
-                    router.push({
-                      name: '房源列表',
-                      params: { cityAbbr: 'hz' },
-                    })
-                  "
+                  @click="selectCity('杭州')"
                 >
                   杭州
                 </n-button>
@@ -296,12 +223,7 @@ const props = defineProps<{ cityAbbr: string }>()
                   quaternary
                   size="small"
                   class="city-btn"
-                  @click="
-                    router.push({
-                      name: '房源列表',
-                      params: { cityAbbr: 'heb' },
-                    })
-                  "
+                  @click="selectCity('哈尔滨')"
                 >
                   哈尔滨
                 </n-button>
@@ -309,12 +231,7 @@ const props = defineProps<{ cityAbbr: string }>()
                   quaternary
                   size="small"
                   class="city-btn"
-                  @click="
-                    router.push({
-                      name: '房源列表',
-                      params: { cityAbbr: 'hf' },
-                    })
-                  "
+                  @click="selectCity('合肥')"
                 >
                   合肥
                 </n-button>
@@ -328,12 +245,7 @@ const props = defineProps<{ cityAbbr: string }>()
                   quaternary
                   size="small"
                   class="city-btn"
-                  @click="
-                    router.push({
-                      name: '房源列表',
-                      params: { cityAbbr: 'jn' },
-                    })
-                  "
+                  @click="selectCity('济南')"
                 >
                   济南
                 </n-button>
@@ -341,12 +253,7 @@ const props = defineProps<{ cityAbbr: string }>()
                   quaternary
                   size="small"
                   class="city-btn"
-                  @click="
-                    router.push({
-                      name: '房源列表',
-                      params: { cityAbbr: 'km' },
-                    })
-                  "
+                  @click="selectCity('昆明')"
                 >
                   昆明
                 </n-button>
@@ -354,12 +261,7 @@ const props = defineProps<{ cityAbbr: string }>()
                   quaternary
                   size="small"
                   class="city-btn"
-                  @click="
-                    router.push({
-                      name: '房源列表',
-                      params: { cityAbbr: 'lf' },
-                    })
-                  "
+                  @click="selectCity('廊坊')"
                 >
                   廊坊
                 </n-button>
@@ -373,12 +275,7 @@ const props = defineProps<{ cityAbbr: string }>()
                   quaternary
                   size="small"
                   class="city-btn"
-                  @click="
-                    router.push({
-                      name: '房源列表',
-                      params: { cityAbbr: 'nj' },
-                    })
-                  "
+                  @click="selectCity('南京')"
                 >
                   南京
                 </n-button>
@@ -386,12 +283,7 @@ const props = defineProps<{ cityAbbr: string }>()
                   quaternary
                   size="small"
                   class="city-btn"
-                  @click="
-                    router.push({
-                      name: '房源列表',
-                      params: { cityAbbr: 'nc' },
-                    })
-                  "
+                  @click="selectCity('南昌')"
                 >
                   南昌
                 </n-button>
@@ -399,12 +291,7 @@ const props = defineProps<{ cityAbbr: string }>()
                   quaternary
                   size="small"
                   class="city-btn"
-                  @click="
-                    router.push({
-                      name: '房源列表',
-                      params: { cityAbbr: 'qd' },
-                    })
-                  "
+                  @click="selectCity('青岛')"
                 >
                   青岛
                 </n-button>
@@ -418,12 +305,7 @@ const props = defineProps<{ cityAbbr: string }>()
                   quaternary
                   size="small"
                   class="city-btn"
-                  @click="
-                    router.push({
-                      name: '房源列表',
-                      params: { cityAbbr: 'sh' },
-                    })
-                  "
+                  @click="selectCity('上海')"
                 >
                   上海
                 </n-button>
@@ -431,12 +313,7 @@ const props = defineProps<{ cityAbbr: string }>()
                   quaternary
                   size="small"
                   class="city-btn"
-                  @click="
-                    router.push({
-                      name: '房源列表',
-                      params: { cityAbbr: 'sz' },
-                    })
-                  "
+                  @click="selectCity('深圳')"
                 >
                   深圳
                 </n-button>
@@ -444,12 +321,7 @@ const props = defineProps<{ cityAbbr: string }>()
                   quaternary
                   size="small"
                   class="city-btn"
-                  @click="
-                    router.push({
-                      name: '房源列表',
-                      params: { cityAbbr: 'suzhou' },
-                    })
-                  "
+                  @click="selectCity('苏州')"
                 >
                   苏州
                 </n-button>
@@ -457,12 +329,7 @@ const props = defineProps<{ cityAbbr: string }>()
                   quaternary
                   size="small"
                   class="city-btn"
-                  @click="
-                    router.push({
-                      name: '房源列表',
-                      params: { cityAbbr: 'sy' },
-                    })
-                  "
+                  @click="selectCity('沈阳')"
                 >
                   沈阳
                 </n-button>
@@ -470,12 +337,7 @@ const props = defineProps<{ cityAbbr: string }>()
                   quaternary
                   size="small"
                   class="city-btn"
-                  @click="
-                    router.push({
-                      name: '房源列表',
-                      params: { cityAbbr: 'sjz' },
-                    })
-                  "
+                  @click="selectCity('石家庄')"
                 >
                   石家庄
                 </n-button>
@@ -489,12 +351,7 @@ const props = defineProps<{ cityAbbr: string }>()
                   quaternary
                   size="small"
                   class="city-btn"
-                  @click="
-                    router.push({
-                      name: '房源列表',
-                      params: { cityAbbr: 'tj' },
-                    })
-                  "
+                  @click="selectCity('天津')"
                 >
                   天津
                 </n-button>
@@ -502,12 +359,7 @@ const props = defineProps<{ cityAbbr: string }>()
                   quaternary
                   size="small"
                   class="city-btn"
-                  @click="
-                    router.push({
-                      name: '房源列表',
-                      params: { cityAbbr: 'wh' },
-                    })
-                  "
+                  @click="selectCity('武汉')"
                 >
                   武汉
                 </n-button>
@@ -521,12 +373,7 @@ const props = defineProps<{ cityAbbr: string }>()
                   quaternary
                   size="small"
                   class="city-btn"
-                  @click="
-                    router.push({
-                      name: '房源列表',
-                      params: { cityAbbr: 'xa' },
-                    })
-                  "
+                  @click="selectCity('西安')"
                 >
                   西安
                 </n-button>
@@ -534,12 +381,7 @@ const props = defineProps<{ cityAbbr: string }>()
                   quaternary
                   size="small"
                   class="city-btn"
-                  @click="
-                    router.push({
-                      name: '房源列表',
-                      params: { cityAbbr: 'xm' },
-                    })
-                  "
+                  @click="selectCity('厦门')"
                 >
                   厦门
                 </n-button>
@@ -553,12 +395,7 @@ const props = defineProps<{ cityAbbr: string }>()
                   quaternary
                   size="small"
                   class="city-btn"
-                  @click="
-                    router.push({
-                      name: '房源列表',
-                      params: { cityAbbr: 'zz' },
-                    })
-                  "
+                  @click="selectCity('郑州')"
                 >
                   郑州
                 </n-button>

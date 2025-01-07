@@ -1,8 +1,6 @@
 import type { forRentListResult } from "@/type/for-rent.ts"
 import { defineStore } from "pinia"
 
-
-
 const useForRentStore = defineStore("for-rent", {
   persist: true,
   state: (): forRentListResult => ({
@@ -22,5 +20,4 @@ const useForRentStore = defineStore("for-rent", {
   },
 })
 
-
-export {  useForRentStore }
+export { useForRentStore }

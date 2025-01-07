@@ -17,16 +17,13 @@ import type { forRentListResult } from "@/type/for-rent"
 import type { adminDivResult } from "@/type/admin-div"
 import type { dictionaryDetailResult } from "@/type/dictionary-detail"
 import Header from "@/component/header.vue"
-import { availableCities } from "@/constant"
 import { useRouter } from "vue-router"
 import noImage from "@/asset/no-image.jpg"
-
-const props = defineProps<{
-  cityAbbr: string
-}>()
+import useCityStore from "@/store/city"
 
 const router = useRouter()
 const message = useMessage()
+const cityStore = useCityStore()
 
 //筛选条件的类型
 type filterOptionResult = {
@@ -36,7 +33,6 @@ type filterOptionResult = {
 
 //已选条件的类型
 type selectedOptionResult = {
-  level2AdminDiv: adminDivResult
   level3AdminDiv?: adminDivResult
   level4AdminDiv?: adminDivResult
   minPrice?: number
@@ -48,20 +44,14 @@ type selectedOptionResult = {
 const filterOption = reactive<filterOptionResult>({})
 
 //已选条件的值
-const selectedOption = reactive<selectedOptionResult>({
-  level2AdminDiv: {
-    name: "",
-    code: -1,
-    pinyin_prefix: "",
-  },
-})
+const selectedOption = reactive<selectedOptionResult>({})
 
 //获取筛选条件
 async function getFilterOption() {
   try {
     const [res1, res2] = await Promise.all([
       adminDivApi.getList({
-        parent_code: selectedOption.level2AdminDiv.code,
+        parent_code: cityStore.code,
       }),
       dictionaryDetailApi.getList({
         dictionary_type_name: "租赁类型",
@@ -108,23 +98,15 @@ const data: forRentListResult = reactive({
 getData()
 
 watch(
-  () => props.cityAbbr,
-  async () => {
-    //获取2级行政区列表
-    const city = availableCities.find((item) => item.abbr === props.cityAbbr)
-    //如果该城市或编码不存在
-    if (!city || !city.code) {
-      router.push({ name: "首页" })
-    } else {
-      selectedOption.level2AdminDiv.name = city.name
-      selectedOption.level2AdminDiv.code = city.code
-      if (selectedOption.level3AdminDiv) {
-        selectedOption.level3AdminDiv = undefined
-      }
-      if (selectedOption.level4AdminDiv) {
-        selectedOption.level4AdminDiv = undefined
-      }
+  () => cityStore.code,
+  () => {
+    if (selectedOption.level3AdminDiv) {
+      selectedOption.level3AdminDiv = undefined
     }
+    if (selectedOption.level4AdminDiv) {
+      selectedOption.level4AdminDiv = undefined
+    }
+
     getFilterOption()
     getData()
   },
@@ -157,7 +139,7 @@ async function getData() {
     page: data.paging.page,
     page_size: data.paging.page_size,
     desc: true,
-    level_2_admin_div: selectedOption.level2AdminDiv.code,
+    level_2_admin_div: cityStore.code,
     level_3_admin_div: selectedOption.level3AdminDiv?.code,
     min_price: selectedOption.minPrice,
     max_price: selectedOption.maxPrice,
@@ -172,7 +154,7 @@ async function getData() {
 function getDetail(id: number) {
   const href = router.resolve({
     name: "房源详情",
-    params: { id, cityAbbr: props.cityAbbr },
+    params: { id },
   })
   window.open(href.href, "_blank")
 }
@@ -180,7 +162,7 @@ function getDetail(id: number) {
 
 <template>
   <!-- 头部区域 -->
-  <Header :cityAbbr="props.cityAbbr" />
+  <Header />
 
   <!-- 内容区 -->
   <n-flex vertical style="width: 1280px; margin: 0 auto">

@@ -4,13 +4,13 @@ import dictionaryDetailApi from "@/api/dictionary-detail"
 import forRentApi from "@/api/for-rent"
 import Header from "@/component/header.vue"
 import {
-  availableCities,
   bathroom,
   bedroom,
   kitchen,
   livingRoom,
   tenant,
 } from "@/constant"
+import useCityStore from "@/store/city"
 import useUserStore from "@/store/user"
 import type { adminDivResult } from "@/type/admin-div"
 import type { dictionaryDetailResult } from "@/type/dictionary-detail"
@@ -35,13 +35,11 @@ import {
 import { reactive, ref, watch } from "vue"
 import { useRouter } from "vue-router"
 
-const props = defineProps<{
-  cityAbbr: string
-}>()
-
 const message = useMessage()
 const router = useRouter()
 const userStore = useUserStore()
+const cityStore = useCityStore()
+
 const uploadUrl =
   import.meta.env.VITE_BASE_URL + import.meta.env.VITE_BATCH_UPLOAD_URL
 
@@ -70,23 +68,6 @@ const formData = reactive({
   files: <(UploadFileInfo & { backendId: number })[]>[],
 })
 
-//监听props的cityAbbr变化，获取2级行政区数据
-watch(
-  () => props.cityAbbr,
-  async () => {
-    //获取2级行政区列表
-    const city = availableCities.find((item) => item.abbr === props.cityAbbr)
-    //如果该城市或编码不存在
-    if (!city || !city.code) {
-      router.push({ name: "未找到" })
-    } else {
-      formData.level2AdminDiv = city.code
-    }
-  },
-  {
-    immediate: true,
-  }
-)
 
 //筛选条件的类型
 type formOptionResult = {
@@ -122,7 +103,7 @@ async function getFormOption() {
         dictionary_type_name: "性别限制",
       }),
       adminDivApi.getList({
-        parent_code: formData.level2AdminDiv || -1,
+        parent_code: cityStore.code,
       }),
       dictionaryDetailApi.getList({
         dictionary_type_name: "朝向",
@@ -371,7 +352,6 @@ async function submitForm() {
       name: "房源详情",
       params: {
         id: res.data.id,
-        cityAbbr: props.cityAbbr,
       },
     })
   }, 2000)
@@ -383,7 +363,7 @@ async function submitForm() {
     <!-- 加载框的提示信息 -->
     <template #description> 正在提交，请稍等...</template>
     <!-- 头部区域 -->
-    <Header :cityAbbr="props.cityAbbr" />
+    <Header />
 
     <!-- 内容区域 -->
     <n-flex justify="center" style="width: 1280px">

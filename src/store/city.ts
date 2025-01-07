@@ -1,24 +1,29 @@
-import { availableCities } from "@/constant"
-import type { adminDivResult } from "@/type/admin-div"
+import { allCities } from "@/constant"
+import { createDiscreteApi } from "naive-ui"
 import { defineStore } from "pinia"
+
+const { message } = createDiscreteApi(["message"])
 
 const useCityStore = defineStore("city", {
   persist: true,
   state: () => ({
-    name: <string | null>null,
-    abbr: <string | null>null,
-    code: <number | null>null,
-    parentCode: <number | null>null,
-    pinyinPrefix: <string | null>null,
+    name: <string>"北京市",
+    code: <number>1101,
+    parent_code: <number>11,
+    pinyin_prefix: <string>"b",
   }),
   actions: {
-    setCityInfo(city: adminDivResult) {
+    setCity(cityName: string) {
+      const city = allCities.find((item) => item.name.includes(cityName))
+      if (!city) {
+        message.error("该城市暂未开通服务，请重新选择")
+        return
+      }
+
       this.name = city.name
-      this.abbr =
-        availableCities.find((item) => item.code === city.code)?.abbr ?? null
       this.code = city.code
-      this.parentCode = city.parent_code
-      this.pinyinPrefix = city.pinyin_prefix
+      this.parent_code = city.parent_code
+      this.pinyin_prefix = city.pinyin_prefix
     },
   },
 })

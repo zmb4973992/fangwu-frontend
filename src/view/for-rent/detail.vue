@@ -18,7 +18,6 @@ import login from "@/component/login.vue"
 
 const props = defineProps<{
   id: number
-  cityAbbr: string
 }>()
 
 const router = useRouter()
@@ -90,7 +89,7 @@ const showContactButton = ref(true)
 </script>
 
 <template>
-  <Header :cityAbbr="props.cityAbbr" />
+  <Header  />
   <n-flex vertical style="width: 1200px; margin: 20px auto">
     <!-- 上部信息 -->
     <n-flex vertical>

@@ -12,12 +12,12 @@ const menuOptions: MenuOption[] = [
         RouterLink,
         {
           to: {
-            name: "首页",
+            name: "我的发布",
           },
         },
-        { default: () => "我发布的房源" }
+        { default: () => "我的发布" }
       ),
-    key: "首页",
+    key: "我的发布",
   },
   {
     label: () =>
@@ -28,9 +28,9 @@ const menuOptions: MenuOption[] = [
             name: "首页",
           },
         },
-        { default: () => "首页1" }
+        { default: () => "我的收藏" }
       ),
-    key: "我发布的",
+    key: "我的收藏",
   },
   {
     label: "联系我们",
@@ -44,14 +44,13 @@ function handleUpdateValue(key: any, item: any) {
 </script>
 
 <template>
-  {{ activeKey }}
   <n-flex>
     <n-menu
       v-model:value="activeKey"
       :options="menuOptions"
       @update:value="handleUpdateValue"
       :indent="15"
-      style="width: 130px; background-color: #e3e3e3; text-align: center"
+      style="width: 160px; background-color: #e3e3e3;"
     >
     </n-menu>
   </n-flex>

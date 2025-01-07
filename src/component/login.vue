@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue"
+import { reactive, ref } from "vue"
 import { NModal, NForm, NFormItem, NInput, NButton, NCard } from "naive-ui"
 import userApi from "@/api/user"
 import useUserStore from "@/store/user"
@@ -9,9 +9,9 @@ import register from "@/component/register.vue"
 
 const show = ref(false)
 const formRef = ref()
-const formData = ref({
-  username: "",
-  password: "",
+const formData = reactive({
+  username: <string>"",
+  password: <string>"",
 })
 
 const formRules = {
@@ -40,7 +40,7 @@ function validateForm() {
     //如果没有发生错误
     if (!error) {
       //验证账号和密码
-      userApi.login(formData.value).then((res) => {
+      userApi.login(formData).then((res) => {
         //如果验证通过
         if (res.code === 0) {
           //保存token
@@ -81,11 +81,18 @@ defineExpose({ openModal })
         label-width="auto"
         :rules="formRules"
       >
-        <n-form-item  path="username" label="用户名">
-          <n-input v-model:value="formData.username" placeholder="请输入用户名"/>
+        <n-form-item path="username" label="用户名">
+          <n-input
+            v-model:value="formData.username"
+            placeholder="请输入用户名"
+          />
         </n-form-item>
-        <n-form-item  path="password" label="密码">
-          <n-input v-model:value="formData.password" type="password" placeholder="请输入密码"/>
+        <n-form-item path="password" label="密码">
+          <n-input
+            v-model:value="formData.password"
+            type="password"
+            placeholder="请输入密码"
+          />
         </n-form-item>
         <n-flex justify="space-between">
           <n-button type="primary" @click="validateForm" style="width: 50%">
@@ -99,8 +106,7 @@ defineExpose({ openModal })
     </n-card>
   </n-modal>
 
-  <register ref="registerRef"/>
-
+  <register ref="registerRef" />
 </template>
 
 <style scoped lang="scss"></style>

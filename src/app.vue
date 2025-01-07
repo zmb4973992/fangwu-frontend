@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { NMessageProvider, NConfigProvider } from "naive-ui";
-import { zhCN } from "naive-ui";
+import { NMessageProvider, NConfigProvider } from "naive-ui"
+import { zhCN } from "naive-ui"
 </script>
 
 <template>

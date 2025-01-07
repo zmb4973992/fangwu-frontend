@@ -5,7 +5,6 @@ import forRentApi from "@/api/for-rent"
 import userApi from "@/api/user"
 import Header from "@/component/header.vue"
 import {
-  availableCities,
   bathroom,
   bedroom,
   kitchen,
@@ -36,7 +35,6 @@ import { reactive, ref, watch } from "vue"
 import { useRouter } from "vue-router"
 
 const props = defineProps<{
-  cityAbbr: string
   id: number
 }>()
 
@@ -131,24 +129,6 @@ const formData = reactive({
   //增加backendId字段，用于上传图片时携带后端生成的id
   files: <(UploadFileInfo & { backendId: number })[]>[],
 })
-
-//监听props的cityAbbr变化，获取2级行政区数据
-watch(
-  () => props.cityAbbr,
-  async () => {
-    //获取2级行政区列表
-    const city = availableCities.find((item) => item.abbr === props.cityAbbr)
-    //如果该城市或编码不存在
-    if (!city || !city.code) {
-      router.push({ name: "未找到" })
-    } else {
-      formData.level2AdminDiv = city.code
-    }
-  },
-  {
-    immediate: true,
-  }
-)
 
 const formRules = reactive<FormRules>({
   rentType: {
@@ -430,7 +410,7 @@ getData()
 
 <template>
   <!-- 头部区域 -->
-  <Header :cityAbbr="props.cityAbbr" />
+  <Header/>
 
   <!-- 内容区域 -->
   <n-flex justify="center" style="width: 1280px">
