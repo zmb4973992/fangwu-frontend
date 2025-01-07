@@ -8,7 +8,7 @@ export type forRentRequest = pagingRequest & {
 }
 
 export type forRentResult = {
-  id?: number
+  id: number
   rent_type?: dictionaryDetailResult
   price?: number
   description?: string

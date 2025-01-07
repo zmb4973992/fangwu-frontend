@@ -31,6 +31,11 @@ type update = create & {
   id: number
 }
 
+// 删除出租信息的请求参数类型
+type deleteRecord = {
+  id: number
+}
+
 // 获取出租信息列表的请求参数类型
 type getList = pagingRequest & {
   created_by_myself?: boolean
@@ -61,23 +66,29 @@ const forRentApi = {
       .catch((err) => console.log(err)),
 
   // 创建出租信息
-  create: (param: create) =>
+  create: (data: create) =>
     request
-      .post("/for-rent", param)
+      .post("/for-rent", data)
       .then((res) => res.data)
       .catch((err) => console.log(err)),
 
   // 更新出租信息
-  update: (param: update) =>
+  update: (data: update) =>
     request
-      .patch("/for-rent", param)
+      .patch("/for-rent", data)
       .then((res) => res.data)
       .catch((err) => console.log(err)),
 
-  // 获取出租信息列表
-  getList: (param: getList) =>
+  // 删除出租信息
+  delete: (id: number) =>
     request
-      .post("/for-rent/list", param)
+      .delete("/for-rent", { data: { id } })
+      .then((res) => res.data)
+      .catch((err) => console.log(err)),
+  // 获取出租信息列表
+  getList: (data: getList) =>
+    request
+      .post("/for-rent/list", data)
       .then((res) => res.data)
       .catch((err) => console.log(err)),
 }
