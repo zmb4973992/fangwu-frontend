@@ -155,14 +155,14 @@ function createColumns({
           return h("img", {
             src: noImage,
             onClick: () => handleGet(row),
-            style: "max-width: 150px; max-height: 112px",
+            style: "max-width: 150px; max-height: 112px;cursor:pointer",
           })
         }
         //如果有图片，则显示第一张图片
         return h("img", {
           src: row.files[0].url,
           onClick: () => handleGet(row),
-          style: "max-width: 150px; max-height: 112px",
+          style: "max-width: 150px; max-height: 112px;cursor:pointer",
         })
       },
     },
@@ -342,7 +342,6 @@ watch(
   width: 200px;
   text-align: center;
   padding: 10px 0 10px 0;
-  cursor: pointer;
 }
 :deep(.description) {
   padding: 10px;

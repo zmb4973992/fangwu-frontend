@@ -5,8 +5,8 @@ import forRentApi from "@/api/for-rent"
 import userApi from "@/api/user"
 import Header from "@/component/header.vue"
 import { bathroom, bedroom, kitchen, livingRoom, tenant } from "@/constant"
+import useCityStore from "@/store/city"
 import useUserStore from "@/store/user"
-import type { adminDivResult } from "@/type/admin-div"
 import type { dictionaryDetailResult } from "@/type/dictionary-detail"
 import {
   NFlex,
@@ -36,8 +36,8 @@ const props = defineProps<{
 type formOptionList = {
   rentType?: dictionaryDetailResult[]
   genderRestriction?: dictionaryDetailResult[]
-  level3AdminDiv?: adminDivResult[]
-  level4AdminDiv?: adminDivResult[]
+  level3AdminDiv?: SelectOption[]
+  level4AdminDiv?: SelectOption[]
   bedroom?: SelectOption[]
   livingRoom?: SelectOption[]
   bathroom?: SelectOption[]
@@ -54,6 +54,8 @@ const formOption = reactive<formOptionList>({
   kitchen,
   tenant,
 })
+
+const cityStore = useCityStore()
 
 async function getFormOption() {
   const res1 = await dictionaryDetailApi.getList({
@@ -72,14 +74,13 @@ async function getFormOption() {
 
   //获取3级行政区划
   const res3 = await adminDivApi.getList({
-    parent_code: formData.level2AdminDiv || -1,
+    parent_code: cityStore.code,
   })
   if (res3) {
     formOption.level3AdminDiv = res3.data.list.map((item: any) => {
       return {
         label: item.name,
         value: item.code,
-        
       }
     })
   }
@@ -327,7 +328,7 @@ async function submitForm() {
   })
 
   //如果提交失败，则提示错误信息，并打印日志
-  if (res.code !== 0) {
+  if (res && res.code !== 0) {
     message.error(res.message)
     console.log(res.err_detail)
     return
@@ -336,68 +337,65 @@ async function submitForm() {
   //如果提交成功
   message.success("修改成功！即将跳转至房源详情页面...")
   // 跳转到房源详情页面
-  setTimeout(
-    () => router.push({ name: "房源详情", params: { id: res.data.id } }),
-    2000
-  )
+  setTimeout(() => {
+    if (res) {
+      router.push({ name: "房源详情", params: { id: res.data.id } })
+    }
+  }, 2000)
 }
 
 async function getData() {
   const res1 = await userApi.getCurrentUser()
-  console.log(res1)
-
   const res2 = await forRentApi.get(props.id)
-  console.log(res2)
-
   // 如果不成功，则跳转到404页面
-  if (res2.code !== 0) {
+  if (res2 && res2.code !== 0) {
     console.log(res2.err_detail)
     router.push({ name: "未找到" })
     return
   }
 
   // 如果发布人不是当前用户，则跳转到403页面
-  if (res2.data.creator !== res1.data.id) {
+  if (res2 && res2.data.creator !== res1.data.id) {
     router.push({ name: "禁止访问" })
     return
   }
 
   // 如果成功，则将数据填充到表单中
-  formData.rentType = res2.data.rent_type.id
-  formData.description = res2.data.description
-  formData.genderRestriction = res2.data.gender_restriction.id
-  formData.mobilePhone = res2.data.mobile_phone
-  formData.wechatId = res2.data.wechat_id
-  formData.level3AdminDiv = res2.data.level_3_admin_div.code
-  formData.level4AdminDiv = res2.data.level_4_admin_div.code
-  formData.community = res2.data.community
-  formData.area = res2.data.area
-  formData.price = res2.data.price
-  formData.bedroom = res2.data.bedroom
-  formData.livingRoom = res2.data.living_room
-  formData.bathroom = res2.data.bathroom
-  formData.kitchen = res2.data.kitchen
-  formData.floor = res2.data.floor
-  formData.totalFloor = res2.data.total_floor
-  formData.orientation = res2.data.orientation.id
-  formData.tenant = res2.data.tenant
-  for (let i = 0; i < res2.data.files?.length; i++) {
+  formData.rentType = res2?.data.rent_type.id
+  formData.description = res2?.data.description
+  formData.genderRestriction = res2?.data.gender_restriction.id
+  formData.mobilePhone = res2?.data.mobile_phone
+  formData.wechatId = res2?.data.wechat_id
+  formData.level3AdminDiv = res2?.data.level_3_admin_div.code
+  formData.level4AdminDiv = res2?.data.level_4_admin_div.code
+  formData.community = res2?.data.community
+  formData.area = res2?.data.area
+  formData.price = res2?.data.price
+  formData.bedroom = res2?.data.bedroom
+  formData.livingRoom = res2?.data.living_room
+  formData.bathroom = res2?.data.bathroom
+  formData.kitchen = res2?.data.kitchen
+  formData.floor = res2?.data.floor
+  formData.totalFloor = res2?.data.total_floor
+  formData.orientation = res2?.data.orientation.id
+  formData.tenant = res2?.data.tenant
+  for (let i = 0; i < res2?.data.files.length; i++) {
     formData.files.push({
-      id: String(res2.data.files[i].id),
-      name: res2.data.files[i].name,
-      url: res2.data.files[i].url,
+      id: String(res2?.data.files[i].id),
+      name: res2?.data.files[i].name,
+      url: res2?.data.files[i].url,
       status: "finished",
-      backendId: res2.data.files[i].id,
+      backendId: res2?.data.files[i].id,
     })
   }
 
   // 获取联系方式
   const res3 = await forRentApi.getContact(props.id)
-  if (res2.code !== 0) {
-    console.log(res2.err_detail)
+  if (res3 && res3.code !== 0) {
+    console.log(res3?.err_detail)
   }
-  formData.mobilePhone = res3.data.mobile_phone
-  formData.wechatId = res3.data.wechat_id
+  formData.mobilePhone = res3?.data.mobile_phone
+  formData.wechatId = res3?.data.wechat_id
 }
 
 getData()
