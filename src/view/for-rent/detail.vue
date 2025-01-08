@@ -25,7 +25,9 @@ const userStore = useUserStore()
 const loginRef = ref()
 const message = useMessage()
 
-const data = reactive<forRentResult>({})
+const data = reactive<forRentResult>({
+  id: 0,
+})
 
 async function getData() {
   const res = await forRentApi.get(props.id)
@@ -70,6 +72,8 @@ async function getContact() {
     console.log(res.err_detail)
     return
   }
+  data.name = res.data.name
+  data.gender = res.data.gender
   data.mobile_phone = formatMobilePhone(res.data.mobile_phone)
   data.wechat_id = res.data.wechat_id
   showContactButton.value = !showContactButton.value
@@ -89,7 +93,7 @@ const showContactButton = ref(true)
 </script>
 
 <template>
-  <Header  />
+  <Header />
   <n-flex vertical style="width: 1200px; margin: 20px auto">
     <!-- 上部信息 -->
     <n-flex vertical>
@@ -190,7 +194,7 @@ const showContactButton = ref(true)
               v-if="data.rent_type"
             >
               <n-flex style="font-size: 18px">
-                {{ data.rent_type?.name }}
+                {{ data.rent_type?.value }}
               </n-flex>
               <n-flex style="font-size: 13px; color: gray">出租方式</n-flex>
             </n-flex>
@@ -230,7 +234,7 @@ const showContactButton = ref(true)
               style="width: 149px; margin: 10px 0"
             >
               <n-flex style="font-size: 18px">
-                {{ data.orientation?.name }}
+                {{ data.orientation?.value }}
               </n-flex>
               <n-flex style="font-size: 13px; color: gray">朝向</n-flex>
             </n-flex>
@@ -241,7 +245,7 @@ const showContactButton = ref(true)
               style="width: 149px; margin: 10px 0"
             >
               <n-flex style="font-size: 18px">
-                {{ data.gender_restriction?.name }}
+                {{ data.gender_restriction?.value }}
               </n-flex>
               <n-flex style="font-size: 13px; color: gray">性别要求</n-flex>
             </n-flex>
@@ -272,7 +276,11 @@ const showContactButton = ref(true)
           </n-flex>
 
           <!-- 小区和位置 -->
-          <n-flex v-if="data.community" vertical style="margin-bottom: 10px">
+          <n-flex
+            v-if="data.community"
+            vertical
+            style="margin-bottom: 10px; border-bottom: 1px solid #ccc"
+          >
             <div style="font-size: 18px; margin: 10px 0">
               小区：{{ data.community }}
             </div>
@@ -305,16 +313,21 @@ const showContactButton = ref(true)
             </n-button>
           </n-flex>
           <!-- 具体的联系方式 -->
-          <n-flex v-if="!showContactButton">
-            <!-- 手机号 -->
-            <n-flex v-if="data.mobile_phone" vertical style="width: 47%">
+          <!-- 称呼 -->
+          <n-flex v-if="data.name" style="font-size: 18px">
+            联系人：{{ data.name }}{{ data.gender?.value }}
+          </n-flex>
+
+          <!-- 手机号 -->
+          <n-flex :size="[20, 20]">
+            <n-flex v-if="data.mobile_phone" vertical style="max-width: 48%">
               <n-flex style="font-size: 24px; font-weight: 600; color: green">
                 {{ data.mobile_phone }}
               </n-flex>
               <n-flex style="font-size: 13px; color: gray">手机号</n-flex>
             </n-flex>
             <!-- 微信号 -->
-            <n-flex v-if="data.wechat_id" vertical style="width: 50%">
+            <n-flex v-if="data.wechat_id" vertical style="max-width: 48%">
               <n-flex style="font-size: 24px; font-weight: 600; color: green">
                 {{ data.wechat_id }}
               </n-flex>
@@ -344,7 +357,7 @@ const showContactButton = ref(true)
             房源描述
           </n-flex>
           <!-- 房源描述的内容 -->
-          <n-flex style="width: 850px; padding: 10px">
+          <n-flex style="width: 850px; padding: 10px; word-break: break-all">
             {{ data.description }}
           </n-flex>
         </n-flex>

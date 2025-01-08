@@ -31,6 +31,8 @@ router.beforeEach(async (to) => {
     }
   }
 
+  // 无access_token或者access_token无效，则跳转到登录页面
+  userStore.clearAccessToken()
   message.error("请先登录")
   router.push({ name: "登录" })
   return false

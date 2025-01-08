@@ -54,7 +54,7 @@ async function getFilterOption() {
         parent_code: cityStore.code,
       }),
       dictionaryDetailApi.getList({
-        dictionary_type_name: "租赁类型",
+        dictionary_type_value: "租赁类型",
       }),
     ])
 
@@ -90,8 +90,8 @@ const data: forRentListResult = reactive({
   paging: {
     page: 0,
     page_size: 0,
-    number_of_pages: 0,
-    number_of_records: 0,
+    total_pages: 0,
+    total_records: 0,
   },
 })
 
@@ -125,15 +125,6 @@ watch(
   }
 )
 
-watch(
-  () => data.paging.page_size,
-  () => {
-    data.paging.page = 1
-    getData()
-    scrollTo(0, 0)
-  }
-)
-
 async function getData() {
   const res = await forRentApi.getList({
     page: data.paging.page,
@@ -145,6 +136,7 @@ async function getData() {
     max_price: selectedOption.maxPrice,
     rent_type: selectedOption.rentType?.id,
   })
+
   if (res) {
     data.list = res.data.list
     data.paging = res.data.paging
@@ -226,7 +218,7 @@ function getDetail(id: number) {
           :color="selectedOption.rentType == rentType ? 'red' : ''"
           @click="selectedOption.rentType = rentType"
         >
-          {{ rentType.name }}
+          {{ rentType.value }}
         </n-button>
       </n-flex>
 
@@ -290,7 +282,7 @@ function getDetail(id: number) {
                 style="font-size: 16px; margin-bottom: 5px"
               >
                 <span v-if="item.rent_type">
-                  {{ item.rent_type?.name }}
+                  {{ item.rent_type?.value }}
                 </span>
                 <span
                   v-if="
@@ -313,7 +305,7 @@ function getDetail(id: number) {
                   <span v-if="item.bedroom">
                     {{ item.bedroom }}
                   </span>
-                  <span v-if="item.bedroom"> 室 </span>
+                  <span v-if="item.bedroom">室</span>
                   <span v-if="item.livingRoom">
                     {{ item.livingRoom }}
                   </span>
@@ -333,11 +325,11 @@ function getDetail(id: number) {
                   |
                 </span>
                 <span v-if="item.gender_restriction">
-                  {{ item.gender_restriction?.name }}
+                  {{ item.gender_restriction?.value }}
                 </span>
                 <span v-if="item.orientation" style="color: #ccc"> | </span>
                 <span v-if="item.orientation">
-                  {{ item.orientation?.name }}
+                  朝{{ item.orientation?.value }}
                 </span>
                 <span v-if="item.tenant" style="color: #ccc"> | </span>
                 <span v-if="item.tenant">{{ item.tenant }}</span>
@@ -380,7 +372,7 @@ function getDetail(id: number) {
         >
           <n-pagination
             v-model:page="data.paging.page"
-            :page-count="data.paging.number_of_pages"
+            :page-count="data.paging.total_pages"
             v-model:page-size="data.paging.page_size"
             size="large"
             show-quick-jumper

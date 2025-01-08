@@ -3,13 +3,7 @@ import adminDivApi from "@/api/admin-div"
 import dictionaryDetailApi from "@/api/dictionary-detail"
 import forRentApi from "@/api/for-rent"
 import Header from "@/component/header.vue"
-import {
-  bathroom,
-  bedroom,
-  kitchen,
-  livingRoom,
-  tenant,
-} from "@/constant"
+import { bathroom, bedroom, kitchen, livingRoom, tenant } from "@/constant"
 import useCityStore from "@/store/city"
 import useUserStore from "@/store/user"
 import type { adminDivResult } from "@/type/admin-div"
@@ -50,7 +44,6 @@ const formData = reactive({
   genderRestriction: <number | null>null,
   mobilePhone: <string>"",
   wechatId: <string>"",
-  level2AdminDiv: <number | null>null,
   level3AdminDiv: <number | null>null,
   level4AdminDiv: <number | null>null,
   community: <string>"",
@@ -66,8 +59,9 @@ const formData = reactive({
   tenant: <number | null>null,
   //增加backendId字段，用于上传图片时携带后端生成的id
   files: <(UploadFileInfo & { backendId: number })[]>[],
+  name: <string>"",
+  gender: <number | null>null,
 })
-
 
 //筛选条件的类型
 type formOptionResult = {
@@ -82,6 +76,7 @@ type formOptionResult = {
   kitchen?: SelectOption[]
   orientation?: SelectOption[]
   tenant?: SelectOption[]
+  gender?: dictionaryDetailResult[]
 }
 
 //表单选项的值
@@ -95,18 +90,21 @@ const formOption = reactive<formOptionResult>({
 
 async function getFormOption() {
   try {
-    const [res1, res2, res3, res4] = await Promise.all([
+    const [res1, res2, res3, res4, res5] = await Promise.all([
       dictionaryDetailApi.getList({
-        dictionary_type_name: "租赁类型",
+        dictionary_type_value: "租赁类型",
       }),
       dictionaryDetailApi.getList({
-        dictionary_type_name: "性别限制",
+        dictionary_type_value: "性别限制",
       }),
       adminDivApi.getList({
         parent_code: cityStore.code,
       }),
       dictionaryDetailApi.getList({
-        dictionary_type_name: "朝向",
+        dictionary_type_value: "朝向",
+      }),
+      dictionaryDetailApi.getList({
+        dictionary_type_value: "性别",
       }),
     ])
 
@@ -127,10 +125,13 @@ async function getFormOption() {
     if (res4) {
       formOption.orientation = res4.data.list.map((item: any) => {
         return {
-          label: item.name,
+          label: item.value,
           value: item.id,
         }
       })
+    }
+    if (res5) {
+      formOption.gender = res5.data.list
     }
   } catch (error) {
     message.error("获取表单选项失败")
@@ -230,7 +231,7 @@ watch(
     //rentType的值等于formOption里'整租'的id
     if (
       newVal ===
-      (formOption.rentType || []).filter((item) => item.name === "整租")[0].id
+      (formOption.rentType || []).filter((item) => item.value === "整租")[0].id
     ) {
       //清空合租户数的值
       formData.tenant = null
@@ -320,7 +321,7 @@ async function submitForm() {
     mobile_phone: formData.mobilePhone ?? undefined,
     wechat_id: formData.wechatId ?? undefined,
     file_ids: formData.files.map((item) => item.backendId),
-    level_2_admin_div: formData.level2AdminDiv ?? undefined,
+    level_2_admin_div: cityStore.code,
     level_3_admin_div: formData.level3AdminDiv ?? undefined,
     level_4_admin_div: formData.level4AdminDiv ?? undefined,
     community: formData.community,
@@ -333,6 +334,8 @@ async function submitForm() {
     total_floor: formData.totalFloor ?? undefined,
     orientation: formData.orientation ?? undefined,
     tenant: formData.tenant ?? undefined,
+    name: formData.name,
+    gender: formData.gender ?? undefined,
   })
 
   //如果提交失败，则提示错误信息，并打印日志
@@ -386,7 +389,7 @@ async function submitForm() {
                   :value="item.id"
                   style="margin-left: 10px"
                 >
-                  {{ item.name }}
+                  {{ item.value }}
                 </n-radio>
               </n-radio-group>
             </n-form-item>
@@ -533,6 +536,20 @@ async function submitForm() {
               </n-form-item>
             </n-flex>
 
+            <!-- 性别限制 -->
+            <n-form-item label="性别要求" path="genderRestriction">
+              <n-radio-group v-model:value="formData.genderRestriction">
+                <n-radio
+                  v-for="item in formOption.genderRestriction"
+                  :key="item.id"
+                  :value="item.id"
+                  style="margin-left: 10px"
+                >
+                  {{ item.value }}
+                </n-radio>
+              </n-radio-group>
+            </n-form-item>
+
             <!-- 楼层 -->
             <n-flex>
               <n-form-item label="楼层" path="floor" style="width: 250px">
@@ -572,20 +589,6 @@ async function submitForm() {
               </n-select>
             </n-form-item>
 
-            <!-- 性别限制 -->
-            <n-form-item label="性别要求" path="genderRestriction">
-              <n-radio-group v-model:value="formData.genderRestriction">
-                <n-radio
-                  v-for="item in formOption.genderRestriction"
-                  :key="item.id"
-                  :value="item.id"
-                  style="margin-left: 10px"
-                >
-                  {{ item.name }}
-                </n-radio>
-              </n-radio-group>
-            </n-form-item>
-
             <!-- 合租户数 -->
             <!-- 如果选了rentType，
              而且rentType的值等于formOption里'合租'的id，
@@ -595,7 +598,7 @@ async function submitForm() {
                 formData.rentType &&
                 formData.rentType ===
                   (formOption.rentType || []).filter((item) => {
-                    return item.name === '合租'
+                    return item.value === '合租'
                   })[0].id
               "
               label="合租户数"
@@ -609,6 +612,33 @@ async function submitForm() {
               >
               </n-select>
             </n-form-item>
+
+            <n-flex>
+              <!-- 姓名 -->
+              <n-form-item label="联系人姓名：" path="name">
+                <n-input
+                  placeholder="请输入姓名"
+                  v-model:value="formData.name"
+                  maxlength="10"
+                  style="width: 150px"
+                >
+                </n-input>
+              </n-form-item>
+
+              <!-- 性别 -->
+              <n-form-item path="gender">
+                <n-radio-group v-model:value="formData.gender">
+                  <n-radio
+                    v-for="item in formOption.gender"
+                    :key="item.id"
+                    :value="item.id"
+                    style="margin-left: 10px"
+                  >
+                    {{ item.value }}
+                  </n-radio>
+                </n-radio-group>
+              </n-form-item>
+            </n-flex>
 
             <!-- 上传 -->
             <n-form-item label="本地上传" path="fileIds">
@@ -625,7 +655,7 @@ async function submitForm() {
                 :default-file-list="formData.files"
                 :max="9"
               >
-                上传图片
+                <span>上传图片</span>
               </n-upload>
             </n-form-item>
 

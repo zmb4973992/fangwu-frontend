@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { NFlex, NMenu, type MenuOption } from "naive-ui"
-import { h, ref } from "vue"
+import { h } from "vue"
 import { RouterLink } from "vue-router"
 
-const activeKey = ref("skdfjksdfjksdfj")
+const props = defineProps<{
+  activeKey: string
+}>()
 
 const menuOptions: MenuOption[] = [
   {
@@ -12,12 +14,12 @@ const menuOptions: MenuOption[] = [
         RouterLink,
         {
           to: {
-            name: "我的发布",
+            name: "我发布的",
           },
         },
-        { default: () => "我的发布" }
+        { default: () => "我发布的" }
       ),
-    key: "我的发布",
+    key: "我发布的",
   },
   {
     label: () =>
@@ -28,29 +30,24 @@ const menuOptions: MenuOption[] = [
             name: "首页",
           },
         },
-        { default: () => "我的收藏" }
+        { default: () => "我收藏的" }
       ),
-    key: "我的收藏",
+    key: "我收藏的",
   },
   {
     label: "联系我们",
     key: "联系我们",
   },
 ]
-
-function handleUpdateValue(key: any, item: any) {
-  console.log(key, item)
-}
 </script>
 
 <template>
   <n-flex>
     <n-menu
-      v-model:value="activeKey"
+      v-model:value="props.activeKey"
       :options="menuOptions"
-      @update:value="handleUpdateValue"
       :indent="15"
-      style="width: 160px; background-color: #e3e3e3;"
+      style="width: 160px; background-color: #e3e3e3"
     >
     </n-menu>
   </n-flex>

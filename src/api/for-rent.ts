@@ -1,5 +1,7 @@
 import type { pagingRequest } from "@/type/paging.ts"
+import type { commonResponse, listResponse } from "@/type/response"
 import request from "@/util/request.ts"
+import type { AxiosResponse } from "axios"
 
 // 创建出租信息的请求参数类型
 type create = {
@@ -24,15 +26,12 @@ type create = {
   total_floor?: number
   orientation?: number
   tenant?: number
+  name?: string
+  gender?: number
 }
 
 // 更新出租信息的请求参数类型
 type update = create & {
-  id: number
-}
-
-// 删除出租信息的请求参数类型
-type deleteRecord = {
   id: number
 }
 
@@ -55,41 +54,41 @@ const forRentApi = {
   get: (id: number) =>
     request
       .get("/for-rent/" + id)
-      .then((res) => res.data)
+      .then((res: AxiosResponse<commonResponse>) => res.data)
       .catch((err) => console.log(err)),
 
   // 获取出租信息的联系方式
   getContact: (id: number) =>
     request
       .get("/for-rent/" + id + "/contact")
-      .then((res) => res.data)
+      .then((res: AxiosResponse<commonResponse>) => res.data)
       .catch((err) => console.log(err)),
 
   // 创建出租信息
   create: (data: create) =>
     request
       .post("/for-rent", data)
-      .then((res) => res.data)
+      .then((res: AxiosResponse<commonResponse>) => res.data)
       .catch((err) => console.log(err)),
 
   // 更新出租信息
   update: (data: update) =>
     request
       .patch("/for-rent", data)
-      .then((res) => res.data)
+      .then((res: AxiosResponse<commonResponse>) => res.data)
       .catch((err) => console.log(err)),
 
   // 删除出租信息
   delete: (id: number) =>
     request
       .delete("/for-rent", { data: { id } })
-      .then((res) => res.data)
+      .then((res: AxiosResponse<commonResponse>) => res.data)
       .catch((err) => console.log(err)),
   // 获取出租信息列表
   getList: (data: getList) =>
     request
       .post("/for-rent/list", data)
-      .then((res) => res.data)
+      .then((res: AxiosResponse<listResponse>) => res.data)
       .catch((err) => console.log(err)),
 }
 

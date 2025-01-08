@@ -50,13 +50,14 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
-    path: "",
+    path: "/center",
     name: "个人中心",
+    redirect: { name: "我发布的" },
     children: [
       {
         path: "/center/published",
-        name: "我的发布",
-        component: () => import("@/view/for-rent/published.vue"),
+        name: "我发布的",
+        component: () => import("@/view/published.vue"),
         meta: {
           needLogin: true,
         },

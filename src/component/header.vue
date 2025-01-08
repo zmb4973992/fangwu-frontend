@@ -3,7 +3,7 @@ import { NImage, useMessage } from "naive-ui"
 import logo from "@/asset/logo.jpg"
 import { NFlex, NButton, NDropdown, NPopover } from "naive-ui"
 import login from "@/component/login.vue"
-import {  ref } from "vue"
+import { ref } from "vue"
 import useUserStore from "@/store/user"
 import { useRouter } from "vue-router"
 import useCityStore from "@/store/city"
@@ -19,6 +19,10 @@ function showLoginModal() {
 const userStore = useUserStore()
 
 const dropdownOptions = [
+  {
+    label: "个人中心",
+    key: "center",
+  },
   {
     label: "发布出租信息",
     key: "for-rent",
@@ -45,6 +49,9 @@ const router = useRouter()
 
 function handleSelect(key: string) {
   switch (key) {
+    case "center":
+      router.push({ name: "个人中心" })
+      break
     case "for-rent":
       router.push({ name: "发布房源" })
       break

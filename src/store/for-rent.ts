@@ -8,8 +8,8 @@ const useForRentStore = defineStore("for-rent", {
     paging: {
       page: 1,
       page_size: 0,
-      number_of_pages: 1,
-      number_of_records: 0,
+      total_pages: 1,
+      total_records: 0,
     },
   }),
   actions: {

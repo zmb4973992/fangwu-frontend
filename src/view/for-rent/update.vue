@@ -4,13 +4,7 @@ import dictionaryDetailApi from "@/api/dictionary-detail"
 import forRentApi from "@/api/for-rent"
 import userApi from "@/api/user"
 import Header from "@/component/header.vue"
-import {
-  bathroom,
-  bedroom,
-  kitchen,
-  livingRoom,
-  tenant,
-} from "@/constant"
+import { bathroom, bedroom, kitchen, livingRoom, tenant } from "@/constant"
 import useUserStore from "@/store/user"
 import type { adminDivResult } from "@/type/admin-div"
 import type { dictionaryDetailResult } from "@/type/dictionary-detail"
@@ -63,14 +57,14 @@ const formOption = reactive<formOptionList>({
 
 async function getFormOption() {
   const res1 = await dictionaryDetailApi.getList({
-    dictionary_type_name: "租赁类型",
+    dictionary_type_value: "租赁类型",
   })
   if (res1) {
     formOption.rentType = res1.data.list
   }
 
   const res2 = await dictionaryDetailApi.getList({
-    dictionary_type_name: "性别限制",
+    dictionary_type_value: "性别限制",
   })
   if (res2) {
     formOption.genderRestriction = res2.data.list
@@ -85,12 +79,13 @@ async function getFormOption() {
       return {
         label: item.name,
         value: item.code,
+        
       }
     })
   }
 
   const res4 = await dictionaryDetailApi.getList({
-    dictionary_type_name: "朝向",
+    dictionary_type_value: "朝向",
   })
   if (res4) {
     formOption.orientation = res4.data.list.map((item: any) => {
@@ -220,7 +215,7 @@ watch(
     //rentType的值等于formOption里'整租'的id
     if (
       newVal ===
-      (formOption.rentType || []).filter((item) => item.name === "整租")[0].id
+      (formOption.rentType || []).filter((item) => item.value === "整租")[0].id
     ) {
       //清空合租户数的值
       formData.tenant = null
@@ -410,7 +405,7 @@ getData()
 
 <template>
   <!-- 头部区域 -->
-  <Header/>
+  <Header />
 
   <!-- 内容区域 -->
   <n-flex justify="center" style="width: 1280px">
@@ -432,7 +427,7 @@ getData()
                 :key="item.id"
                 :value="item.id"
                 style="margin-left: 10px"
-                >{{ item.name }}</n-radio
+                >{{ item.value }}</n-radio
               >
             </n-radio-group>
           </n-form-item>
@@ -627,7 +622,7 @@ getData()
                 :value="item.id"
                 style="margin-left: 10px"
               >
-                {{ item.name }}
+                {{ item.value }}
               </n-radio>
             </n-radio-group>
           </n-form-item>
@@ -640,7 +635,7 @@ getData()
               formData.rentType &&
               formData.rentType ===
                 (formOption.rentType || []).filter((item) => {
-                  return item.name === '合租'
+                  return item.value === '合租'
                 })[0].id
             "
             label="合租户数"

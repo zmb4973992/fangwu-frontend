@@ -8,6 +8,6 @@ export type pagingRequest = {
 export type pagingResult = {
   page: number
   page_size: number
-  number_of_pages: number
-  number_of_records: number
+  total_pages: number
+  total_records: number
 }

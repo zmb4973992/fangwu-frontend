@@ -30,6 +30,8 @@ export type forRentResult = {
   total_floor?: number
   orientation?: dictionaryDetailResult
   tenant?: number
+  name?: string
+  gender?: dictionaryDetailResult
 }
 
 export type forRentListResult = {
