@@ -1,11 +1,9 @@
 import type { file } from "./file.ts"
 import type { dictionaryDetailResult } from "./dictionary-detail.ts"
 import type { adminDivResult } from "./admin-div.ts"
-import type { pagingRequest, pagingResult } from "./paging.ts"
+import type {  pagingResult } from "./paging.ts"
 
-export type forRentRequest = pagingRequest & {
-  
-}
+
 
 export type forRentResult = {
   id: number

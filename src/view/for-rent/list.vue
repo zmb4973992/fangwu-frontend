@@ -11,6 +11,7 @@ import {
   NButton,
   NInputNumber,
   useMessage,
+  NButtonGroup,
 } from "naive-ui"
 import forRentApi from "@/api/for-rent"
 import type { forRentListResult } from "@/type/for-rent"
@@ -20,6 +21,12 @@ import Header from "@/component/header.vue"
 import { useRouter } from "vue-router"
 import noImage from "@/asset/no-image.jpg"
 import useCityStore from "@/store/city"
+const props = defineProps<{
+  level3AdminDivCode: number
+  minPrice: number
+  maxPrice: number
+  rentTypeId: number
+}>()
 
 const router = useRouter()
 const message = useMessage()
@@ -33,11 +40,10 @@ type filterOptionResult = {
 
 //已选条件的类型
 type selectedOptionResult = {
-  level3AdminDiv?: adminDivResult
-  level4AdminDiv?: adminDivResult
-  minPrice?: number
-  maxPrice?: number
-  rentType?: dictionaryDetailResult
+  level3AdminDivCode?: number
+  minPrice?: number | null
+  maxPrice?: number | null
+  rentTypeId?: number
 }
 
 //筛选条件的值
@@ -72,18 +78,14 @@ async function getFilterOption() {
 
 getFilterOption()
 
-watch(
-  () => selectedOption.level3AdminDiv,
-  () => getData()
-)
-
-watch(
-  () => selectedOption.rentType,
-  () => getData()
-)
-
 //清空已选条件
-const clearSelectedOption = () => window.location.reload()
+const clearSelectedOption = () => {
+  selectedOption.level3AdminDivCode = undefined
+  selectedOption.minPrice = null
+  selectedOption.maxPrice = null
+  selectedOption.rentTypeId = undefined
+  query()
+}
 
 const data: forRentListResult = reactive({
   list: [],
@@ -97,44 +99,16 @@ const data: forRentListResult = reactive({
 
 getData()
 
-watch(
-  () => cityStore.code,
-  () => {
-    if (selectedOption.level3AdminDiv) {
-      selectedOption.level3AdminDiv = undefined
-    }
-    if (selectedOption.level4AdminDiv) {
-      selectedOption.level4AdminDiv = undefined
-    }
-
-    getFilterOption()
-    getData()
-  },
-  {
-    immediate: true,
-  }
-)
-
-watch(
-  () => data.paging.page,
-  (newValue) => {
-    if (newValue) {
-      getData()
-      scrollTo(0, 0)
-    }
-  }
-)
-
 async function getData() {
   const res = await forRentApi.getList({
     page: data.paging.page,
     page_size: data.paging.page_size,
     desc: true,
     level_2_admin_div: cityStore.code,
-    level_3_admin_div: selectedOption.level3AdminDiv?.code,
-    min_price: selectedOption.minPrice,
-    max_price: selectedOption.maxPrice,
-    rent_type: selectedOption.rentType?.id,
+    level_3_admin_div: selectedOption.level3AdminDivCode,
+    min_price: selectedOption.minPrice ?? undefined,
+    max_price: selectedOption.maxPrice ?? undefined,
+    rent_type: selectedOption.rentTypeId,
   })
 
   if (res) {
@@ -150,6 +124,104 @@ function getDetail(id: number) {
   })
   window.open(href.href, "_blank")
 }
+
+//用于拆选条件变化后的查询
+function query() {
+  router.push({
+    name: router.currentRoute.value.name,
+    query: {
+      l3: selectedOption.level3AdminDivCode ?? undefined,
+      min: selectedOption.minPrice ?? undefined,
+      max: selectedOption.maxPrice ?? undefined,
+      rt: selectedOption.rentTypeId ?? undefined,
+    },
+  })
+  getData()
+}
+
+//验证价格区间是否合法
+function validatePrice() {
+  if (
+    selectedOption.minPrice &&
+    selectedOption.maxPrice &&
+    selectedOption.maxPrice < selectedOption.minPrice
+  ) {
+    message.error("最高价必须大于最低价，请修改")
+
+    return
+  }
+  query()
+}
+
+// 如果城市改变，则重新进入到当前页面、获取筛选条件、获取新数据
+watch(
+  () => cityStore.code,
+  () => {
+    router.push({ name: router.currentRoute.value.name })
+    getFilterOption()
+    getData()
+  }
+)
+
+// 如果props.level3AdminDivCode改变，
+// 则更新selectedOption.level3AdminDivCode的值，
+// 并重新获取数据
+watch(
+  () => props.level3AdminDivCode,
+  () => {
+    selectedOption.level3AdminDivCode = props.level3AdminDivCode
+    getData()
+  }
+)
+
+// 如果props.minPrice改变，
+// 则更新selectedOption.minPrice的值，
+// 并重新获取数据
+watch(
+  () => props.minPrice,
+  (newValue) => {
+    if (newValue) {
+      selectedOption.minPrice = newValue
+      getData()
+    }
+  },
+  { immediate: true }
+)
+
+// 如果props.maxPrice改变，
+// 则更新selectedOption.maxPrice的值，
+// 并重新获取数据
+watch(
+  () => props.maxPrice,
+  (newValue) => {
+    if (newValue) {
+      selectedOption.maxPrice = newValue
+      getData()
+    }
+  },
+  { immediate: true }
+)
+
+// 如果props.rentTypeId改变，
+// 则更新selectedOption.rentTypeId的值，
+// 并重新获取数据
+watch(
+  () => props.rentTypeId,
+  () => {
+    selectedOption.rentTypeId = props.rentTypeId
+    getData()
+  }
+)
+
+// 如果data.paging.page改变，
+// 则重新获取数据，并滚动到顶部
+watch(
+  () => data.paging.page,
+  () => {
+    getData()
+    scrollTo(0, 0)
+  }
+)
 </script>
 
 <template>
@@ -164,38 +236,57 @@ function getDetail(id: number) {
       style="
         margin-top: 10px;
         padding-bottom: 20px;
-        border-bottom: 1px solid #e3e3e3;
-        border: 1px solid #e3e3e3;
+        border-bottom: 1px solid lightgrey;
       "
     >
       <!-- 位置 -->
       <n-flex :size="[3, 3]">
         <span style="margin: auto 0">位置：</span>
-        <n-button
-          v-for="level3AdminDiv in filterOption.level3AdminDiv"
-          quaternary
-          :color="selectedOption.level3AdminDiv == level3AdminDiv ? 'red' : ''"
-          @click="
-            () => {
-              selectedOption.level3AdminDiv = level3AdminDiv
-              getData()
-            }
-          "
-          style="padding-left: 8px; padding-right: 8px"
-        >
-          {{ level3AdminDiv.name }}
-        </n-button>
+        <n-button-group>
+          <!-- 不限 -->
+          <n-button
+            quaternary
+            @click="
+              () => {
+                selectedOption.level3AdminDivCode = undefined
+                query()
+              }
+            "
+            :color="props.level3AdminDivCode ? '' : 'red'"
+            style="padding-left: 8px; padding-right: 8px"
+          >
+            不限
+          </n-button>
+          <!-- 具体的3级行政区划 -->
+          <n-button
+            v-for="level3AdminDiv in filterOption.level3AdminDiv"
+            quaternary
+            @click="
+              () => {
+                selectedOption.level3AdminDivCode = level3AdminDiv.code
+                query()
+              }
+            "
+            :color="
+              props.level3AdminDivCode === level3AdminDiv.code ? 'red' : ''
+            "
+            style="padding-left: 8px; padding-right: 8px"
+          >
+            {{ level3AdminDiv.name }}
+          </n-button>
+        </n-button-group>
       </n-flex>
 
-      <!-- 月租金 -->
+      <!-- 租金 -->
       <n-flex :size="[3, 3]" style="margin: 0 0">
-        <span style="margin: auto 0">月租金：</span>
+        <span style="margin: auto 0">租金：</span>
         <n-input-number
           v-model:value="selectedOption.minPrice"
           min="0"
           max="99999"
           :show-button="false"
           style="width: 70px"
+          placeholder="最低价"
         />
         <span style="margin: auto 0"> - </span>
         <n-input-number
@@ -204,9 +295,12 @@ function getDetail(id: number) {
           max="99999"
           :show-button="false"
           style="width: 70px"
+          placeholder="最高价"
         />
         <span style="margin: auto 2px"> 元/月</span>
-        <n-button style="margin-left: 10px" @click="getData">确定</n-button>
+        <n-button style="margin-left: 10px" @click="validatePrice">
+          确定
+        </n-button>
       </n-flex>
 
       <!-- 租赁类型 -->
@@ -215,8 +309,13 @@ function getDetail(id: number) {
         <n-button
           v-for="rentType in filterOption.rentType"
           quaternary
-          :color="selectedOption.rentType == rentType ? 'red' : ''"
-          @click="selectedOption.rentType = rentType"
+          :color="selectedOption.rentTypeId === rentType.id ? 'red' : ''"
+          @click="
+            () => {
+              selectedOption.rentTypeId = rentType.id
+              query()
+            }
+          "
         >
           {{ rentType.value }}
         </n-button>
@@ -231,12 +330,12 @@ function getDetail(id: number) {
     <!-- 数据列表 -->
     <n-flex style="width: 1280px">
       <!-- 左栏 -->
-      <n-flex :size="[0, 0]" vertical style="width: 80%">
+      <n-flex :size="[0, 0]" vertical style="width: 1025px">
         <!-- 单条信息 -->
         <n-card
           v-for="item in data.list"
           :bordered="false"
-          style="border-bottom: 1px solid #e3e3e3"
+          style="border-bottom: 1px solid lightgrey"
         >
           <n-flex justify="space-between">
             <!-- 左侧的图片 -->
@@ -381,9 +480,7 @@ function getDetail(id: number) {
       </n-flex>
       <!-- 右栏，预留位置，
        高500px是为了统一滚动条，以后有内容了可以改 -->
-      <n-flex
-        style="width: calc(20% - 15px); height: 500px; border: 1px solid #ccc"
-      >
+      <n-flex style="width: 241px; height: 500px; border: 1px solid #ccc">
         右栏
       </n-flex>
     </n-flex>

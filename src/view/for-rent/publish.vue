@@ -6,7 +6,6 @@ import Header from "@/component/header.vue"
 import { bathroom, bedroom, kitchen, livingRoom, tenant } from "@/constant"
 import useCityStore from "@/store/city"
 import useUserStore from "@/store/user"
-import type { adminDivResult } from "@/type/admin-div"
 import type { dictionaryDetailResult } from "@/type/dictionary-detail"
 import {
   NFlex,
@@ -67,8 +66,8 @@ const formData = reactive({
 type formOptionResult = {
   rentType?: dictionaryDetailResult[]
   genderRestriction?: dictionaryDetailResult[]
-  level3AdminDiv?: adminDivResult[]
-  level4AdminDiv?: adminDivResult[]
+  level3AdminDiv?: SelectOption[]
+  level4AdminDiv?: SelectOption[]
   //下拉框需要使用这种类型
   bedroom?: SelectOption[]
   livingRoom?: SelectOption[]
@@ -119,6 +118,7 @@ async function getFormOption() {
         return {
           label: item.name,
           value: item.code,
+
         }
       })
     }
@@ -339,9 +339,10 @@ async function submitForm() {
   })
 
   //如果提交失败，则提示错误信息，并打印日志
-  if (res.code !== 0) {
-    message.error(res.message)
-    console.log(res.err_detail)
+  if (res?.code !== 0) {
+    const errMsg = res?.message || "提交失败"
+    message.error(errMsg)
+    console.log(res?.err_detail)
     // 隐藏加载状态
     formData.loading = false
     return

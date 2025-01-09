@@ -47,7 +47,7 @@ const menuOptions: MenuOption[] = [
       v-model:value="props.activeKey"
       :options="menuOptions"
       :indent="15"
-      style="width: 160px; background-color: #e3e3e3"
+      style="width: 160px; height:200px;background-color: white"
     >
     </n-menu>
   </n-flex>

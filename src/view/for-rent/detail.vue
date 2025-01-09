@@ -32,32 +32,32 @@ const data = reactive<forRentResult>({
 async function getData() {
   const res = await forRentApi.get(props.id)
   // 如果不成功，则跳转到404页面
-  if (res.code !== 0) {
-    console.log(res.err_detail)
+  if (res?.code !== 0) {
+    console.log(res?.err_detail)
     router.push({ name: "未找到" })
     return
   }
 
-  data.id = res.data.id
-  data.rent_type = res.data.rent_type
-  data.price = res.data.price
-  data.description = res.data.description
-  data.gender_restriction = res.data.gender_restriction
-  data.files = res.data.files
-  data.level_1_admin_div = res.data.level_1_admin_div
-  data.level_2_admin_div = res.data.level_2_admin_div
-  data.level_3_admin_div = res.data.level_3_admin_div
-  data.level_4_admin_div = res.data.level_4_admin_div
-  data.community = res.data.community
-  data.area = res.data.area
-  data.bedroom = res.data.bedroom
-  data.livingRoom = res.data.livingRoom
-  data.bathroom = res.data.bathroom
-  data.kitchen = res.data.kitchen
-  data.floor = res.data.floor
-  data.total_floor = res.data.total_floor
-  data.orientation = res.data.orientation
-  data.tenant = res.data.tenant
+  data.id = res?.data.id
+  data.rent_type = res?.data.rent_type
+  data.price = res?.data.price
+  data.description = res?.data.description
+  data.gender_restriction = res?.data.gender_restriction
+  data.files = res?.data.files
+  data.level_1_admin_div = res?.data.level_1_admin_div
+  data.level_2_admin_div = res?.data.level_2_admin_div
+  data.level_3_admin_div = res?.data.level_3_admin_div
+  data.level_4_admin_div = res?.data.level_4_admin_div
+  data.community = res?.data.community
+  data.area = res?.data.area
+  data.bedroom = res?.data.bedroom
+  data.livingRoom = res?.data.livingRoom
+  data.bathroom = res?.data.bathroom
+  data.kitchen = res?.data.kitchen
+  data.floor = res?.data.floor
+  data.total_floor = res?.data.total_floor
+  data.orientation = res?.data.orientation
+  data.tenant = res?.data.tenant
 }
 
 async function getContact() {
@@ -67,9 +67,10 @@ async function getContact() {
   }
 
   const res = await forRentApi.getContact(props.id)
-  if (res.code !== 0) {
-    message.error(res.message)
-    console.log(res.err_detail)
+  if (res?.code !== 0) {
+    const errorMessage = res?.message || '获取联系方式失败'
+    message.error(errorMessage)
+    console.log(res?.err_detail)
     return
   }
   data.name = res.data.name
@@ -319,7 +320,7 @@ const showContactButton = ref(true)
           </n-flex>
 
           <!-- 手机号 -->
-          <n-flex :size="[20, 20]">
+          <n-flex :size="[30, 0]">
             <n-flex v-if="data.mobile_phone" vertical style="max-width: 48%">
               <n-flex style="font-size: 24px; font-weight: 600; color: green">
                 {{ data.mobile_phone }}

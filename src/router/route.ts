@@ -19,6 +19,12 @@ const routes: RouteRecordRaw[] = [
         path: "/zufang/list",
         name: "房源列表",
         component: () => import("@/view/for-rent/list.vue"),
+        props: (route) => ({
+          level3AdminDivCode: Number(route.query.l3),
+          minPrice: Number(route.query.min),
+          maxPrice: Number(route.query.max),
+          rentTypeId: Number(route.query.rt),
+        }),
       },
       {
         path: "/zufang/publish",

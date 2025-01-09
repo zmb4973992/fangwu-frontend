@@ -1,9 +1,9 @@
 export type pagingRequest = {
-    page?: number
-    page_size?: number
-    order_by?: string
-    desc?: boolean
-  }
+  page?: number
+  page_size?: number
+  order_by?: string
+  desc?: boolean
+}
 
 export type pagingResult = {
   page: number

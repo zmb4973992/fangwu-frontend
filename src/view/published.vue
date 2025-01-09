@@ -73,8 +73,6 @@ async function getData(type: string) {
         level_2_admin_div: cityStore.code,
       })
 
-      console.log(res)
-
       if (res && res.data.list.length > 0) {
         data.list = res.data.list
         data.paging = res.data.paging
