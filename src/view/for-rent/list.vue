@@ -21,8 +21,10 @@ import Header from "@/component/header.vue"
 import { useRouter } from "vue-router"
 import noImage from "@/asset/no-image.jpg"
 import useCityStore from "@/store/city"
+import { groupByPrefix } from "@/util/tool"
 const props = defineProps<{
   level3AdminDivCode: number
+  level4AdminDivCode: number
   minPrice: number
   maxPrice: number
   rentTypeId: number
@@ -34,13 +36,16 @@ const cityStore = useCityStore()
 
 //筛选条件的类型
 type filterOptionResult = {
-  level3AdminDiv?: adminDivResult[]
+  level3AdminDivs?: adminDivResult[]
+  // 按拼音首字母分组的4级行政区划
+  level4AdminDivGroups?: adminDivResult[][]
   rentType?: dictionaryDetailResult[]
 }
 
 //已选条件的类型
 type selectedOptionResult = {
   level3AdminDivCode?: number
+  level4AdminDivCode?: number
   minPrice?: number | null
   maxPrice?: number | null
   rentTypeId?: number
@@ -65,7 +70,7 @@ async function getFilterOption() {
     ])
 
     if (res1) {
-      filterOption.level3AdminDiv = res1.data.list
+      filterOption.level3AdminDivs = res1.data.list
     }
     if (res2) {
       filterOption.rentType = res2.data.list
@@ -81,6 +86,7 @@ getFilterOption()
 //清空已选条件
 const clearSelectedOption = () => {
   selectedOption.level3AdminDivCode = undefined
+  selectedOption.level4AdminDivCode = undefined
   selectedOption.minPrice = null
   selectedOption.maxPrice = null
   selectedOption.rentTypeId = undefined
@@ -106,6 +112,7 @@ async function getData() {
     desc: true,
     level_2_admin_div: cityStore.code,
     level_3_admin_div: selectedOption.level3AdminDivCode,
+    level_4_admin_div: selectedOption.level4AdminDivCode,
     min_price: selectedOption.minPrice ?? undefined,
     max_price: selectedOption.maxPrice ?? undefined,
     rent_type: selectedOption.rentTypeId,
@@ -131,6 +138,7 @@ function query() {
     name: router.currentRoute.value.name,
     query: {
       l3: selectedOption.level3AdminDivCode ?? undefined,
+      l4: selectedOption.level4AdminDivCode ?? undefined,
       min: selectedOption.minPrice ?? undefined,
       max: selectedOption.maxPrice ?? undefined,
       rt: selectedOption.rentTypeId ?? undefined,
@@ -164,13 +172,21 @@ watch(
 )
 
 // 如果props.level3AdminDivCode改变，
-// 则更新selectedOption.level3AdminDivCode的值，
-// 并重新获取数据
+// 则更新selectedOption.level3AdminDivCode的值
+// 并获取筛选条件中的level4AdminDiv
 watch(
   () => props.level3AdminDivCode,
+  async () => {
+    query()
+    
+  },
+  { immediate: true }
+)
+
+watch(
+  () => props.level4AdminDivCode,
   () => {
-    selectedOption.level3AdminDivCode = props.level3AdminDivCode
-    getData()
+    selectedOption.level4AdminDivCode = props.level4AdminDivCode
   }
 )
 
@@ -225,6 +241,10 @@ watch(
 </script>
 
 <template>
+  <div>props l3:{{ props.level3AdminDivCode }}</div>
+  <div>selected option l3:{{ selectedOption.level3AdminDivCode }}</div>
+  <div>props l4:{{ props.level4AdminDivCode }}</div>
+  <div>selected option l4:{{ selectedOption.level4AdminDivCode }}</div>
   <!-- 头部区域 -->
   <Header />
 
@@ -252,14 +272,13 @@ watch(
                 query()
               }
             "
-            :color="props.level3AdminDivCode ? '' : 'red'"
-            style="padding-left: 8px; padding-right: 8px"
+            :color="selectedOption.level3AdminDivCode ? '' : 'red'"
           >
             不限
           </n-button>
           <!-- 具体的3级行政区划 -->
           <n-button
-            v-for="level3AdminDiv in filterOption.level3AdminDiv"
+            v-for="level3AdminDiv in filterOption.level3AdminDivs"
             quaternary
             @click="
               () => {
@@ -268,7 +287,9 @@ watch(
               }
             "
             :color="
-              props.level3AdminDivCode === level3AdminDiv.code ? 'red' : ''
+              selectedOption.level3AdminDivCode === level3AdminDiv.code
+                ? 'red'
+                : ''
             "
             style="padding-left: 8px; padding-right: 8px"
           >
@@ -277,9 +298,64 @@ watch(
         </n-button-group>
       </n-flex>
 
+      <!-- 4级行政区划 -->
+      <n-flex
+        :size="[25, 0]"
+        style="margin: 0 0 0 45px; background-color: #f6f6f6"
+      >
+        <!-- 行数据 -->
+        <n-flex
+          :size="[3, 3]"
+          v-for="level4AdminDivGroup in filterOption.level4AdminDivGroups"
+        >
+          <!-- 字母 -->
+          <n-flex style="margin: auto auto; padding: 0; font-weight: 600">
+            {{ level4AdminDivGroup[0].pinyin_prefix.toUpperCase() }}
+          </n-flex>
+          <!-- 具体的4级行政区划按钮组 -->
+          <n-button-group style="margin: 0">
+            <n-button
+              v-for="level4AdminDiv in level4AdminDivGroup"
+              quaternary
+              @click="
+                () => {
+                  selectedOption.level4AdminDivCode = level4AdminDiv.code
+                  query()
+                }
+              "
+              :color="
+                selectedOption.level4AdminDivCode === level4AdminDiv.code
+                  ? 'red'
+                  : ''
+              "
+              style="padding-left: 4px; padding-right: 4px"
+            >
+              {{ level4AdminDiv.name }}
+            </n-button>
+          </n-button-group>
+        </n-flex>
+      </n-flex>
+
       <!-- 租金 -->
       <n-flex :size="[3, 3]" style="margin: 0 0">
         <span style="margin: auto 0">租金：</span>
+        <!-- 不限 -->
+        <n-button
+          quaternary
+          @click="
+            () => {
+              selectedOption.minPrice = undefined
+              selectedOption.maxPrice = undefined
+              query()
+            }
+          "
+          :color="
+            selectedOption.minPrice || selectedOption.maxPrice ? '' : 'red'
+          "
+        >
+          不限
+        </n-button>
+        <!-- 租金下限 -->
         <n-input-number
           v-model:value="selectedOption.minPrice"
           min="0"
@@ -289,6 +365,7 @@ watch(
           placeholder="最低价"
         />
         <span style="margin: auto 0"> - </span>
+        <!-- 租金上限 -->
         <n-input-number
           v-model:value="selectedOption.maxPrice"
           min="0"
@@ -306,6 +383,20 @@ watch(
       <!-- 租赁类型 -->
       <n-flex :size="[3, 3]" style="margin: 0 0">
         <span style="margin: auto 0">方式：</span>
+        <!-- 不限 -->
+        <n-button
+          quaternary
+          @click="
+            () => {
+              selectedOption.rentTypeId = undefined
+              query()
+            }
+          "
+          :color="selectedOption.rentTypeId ? '' : 'red'"
+        >
+          不限
+        </n-button>
+        <!-- 具体的租赁类型 -->
         <n-button
           v-for="rentType in filterOption.rentType"
           quaternary
