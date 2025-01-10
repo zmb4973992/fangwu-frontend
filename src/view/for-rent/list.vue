@@ -68,12 +68,15 @@ const selectedOption = reactive<selectedOptionResult>({
 //获取筛选条件
 async function getOption() {
   try {
-    const [res1, res2] = await Promise.all([
+    const [res1, res2, res3] = await Promise.all([
       adminDivApi.getList({
         parent_code: cityStore.code,
       }),
       dictionaryDetailApi.getList({
         dictionary_type_value: "租赁类型",
+      }),
+      adminDivApi.getList({
+        parent_code: selectedOption.level3AdminDivCode,
       }),
     ])
 
@@ -82,6 +85,9 @@ async function getOption() {
     }
     if (res2) {
       option.rentType = res2.data.list
+    }
+    if (res3) {
+      option.level4AdminDivGroups = groupByPrefix(res3.data.list)
     }
   } catch (error) {
     message.error("获取筛选选项失败，请刷新页面重试")
@@ -175,6 +181,8 @@ function validatePrice() {
 watch(
   () => cityStore.code,
   () => {
+    option.level4AdminDivGroups = undefined
+    selectedOption.level4AdminDivCode = undefined
     router.push({ name: router.currentRoute.value.name })
     getOption()
     getData()
@@ -185,14 +193,16 @@ watch(
 watch(
   () => selectedOption.level3AdminDivCode,
   async (newValue) => {
-    // 清空所有的4级行政区划选项
-    option.level4AdminDivGroups = undefined
     // 清空已选的4级行政区划
     selectedOption.level4AdminDivCode = undefined
     // 更新url的query参数
     updateQuery()
-    // 如果选中的3级行政区划为空，则直接返回，不查询数据
-    if (!newValue) return
+    // 如果选中的3级行政区划为空，则清空4级行政区划选项组
+    // 直接返回，不查询数据
+    if (!newValue) {
+      option.level4AdminDivGroups = undefined
+      return
+    }
     // 根据选中的3级行政区划，查询4级行政区划
     const res = await adminDivApi.getList({
       parent_code: newValue,
@@ -202,7 +212,6 @@ watch(
       option.level4AdminDivGroups = groupByPrefix(res.data.list)
     }
   },
-  { immediate: true }
 )
 
 // 如果data.paging.page改变，
@@ -217,6 +226,7 @@ watch(
 </script>
 
 <template>
+  {{ selectedOption.level4AdminDivCode }}
   <!-- 头部区域 -->
   <Header />
 
@@ -224,6 +234,7 @@ watch(
   <n-flex vertical style="width: 1280px; margin: 0 auto">
     <!-- 筛选条件 -->
     <n-flex
+      :size="[0, 5]"
       vertical
       style="
         margin-top: 10px;
@@ -232,55 +243,59 @@ watch(
       "
     >
       <!-- 位置 -->
-      <n-flex :size="[3, 3]">
-        <span style="margin: auto 0">位置：</span>
-        <n-button-group>
-          <!-- 不限 -->
-          <n-button
-            quaternary
-            @click="
-              () => {
-                selectedOption.level3AdminDivCode = undefined
-                updateQuery()
-                getData()
-              }
-            "
-            :color="selectedOption.level3AdminDivCode ? '' : 'red'"
-          >
-            不限
-          </n-button>
-          <!-- 具体的3级行政区划 -->
-          <n-button
-            v-for="level3AdminDiv in option.level3AdminDivs"
-            quaternary
-            @click="
-              () => {
-                selectedOption.level3AdminDivCode = level3AdminDiv.code
-                updateQuery()
-                getData()
-              }
-            "
-            :color="
-              selectedOption.level3AdminDivCode === level3AdminDiv.code
-                ? 'red'
-                : ''
-            "
-            style="padding-left: 8px; padding-right: 8px"
-          >
-            {{ level3AdminDiv.name }}
-          </n-button>
+      <n-flex :size="[3, 0]" style="">
+        <n-flex style="margin: 5px 0 0 0">位置：</n-flex>
+        <n-button-group class="location-button-group">
+          <n-flex :size="[0, 0]" style="width: 1233px">
+            <!-- 不限 -->
+            <n-button
+              quaternary
+              @click="
+                () => {
+                  selectedOption.level3AdminDivCode = undefined
+                  updateQuery()
+                  getData()
+                }
+              "
+              :color="selectedOption.level3AdminDivCode ? '' : 'red'"
+            >
+              不限
+            </n-button>
+            <!-- 具体的3级行政区划 -->
+            <n-button
+              v-for="level3AdminDiv in option.level3AdminDivs"
+              quaternary
+              @click="
+                () => {
+                  selectedOption.level3AdminDivCode = level3AdminDiv.code
+                  updateQuery()
+                  getData()
+                }
+              "
+              :color="
+                selectedOption.level3AdminDivCode === level3AdminDiv.code
+                  ? 'red'
+                  : ''
+              "
+              style="padding-left: 8px; padding-right: 8px"
+            >
+              {{ level3AdminDiv.name }}
+            </n-button>
+          </n-flex>
         </n-button-group>
       </n-flex>
 
       <!-- 4级行政区划 -->
       <n-flex
-        :size="[25, 0]"
+        v-if="option.level4AdminDivGroups"
+        :size="[0, 0]"
         style="margin: 0 0 0 45px; background-color: #f6f6f6"
       >
         <!-- 行数据 -->
         <n-flex
           :size="[3, 3]"
           v-for="level4AdminDivGroup in option.level4AdminDivGroups"
+          style="margin: 3px 0 3px 15px"
         >
           <!-- 字母 -->
           <n-flex style="margin: auto auto; padding: 0; font-weight: 600">
@@ -351,7 +366,12 @@ watch(
           placeholder="最高价"
         />
         <span style="margin: auto 2px"> 元/月</span>
-        <n-button style="margin-left: 10px" @click="validatePrice">
+        <n-button
+          secondary
+          strong
+          style="margin-left: 10px"
+          @click="validatePrice"
+        >
           确定
         </n-button>
       </n-flex>
