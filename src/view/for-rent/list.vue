@@ -22,27 +22,29 @@ import { useRouter } from "vue-router"
 import noImage from "@/asset/no-image.jpg"
 import useCityStore from "@/store/city"
 import { groupByPrefix } from "@/util/tool"
+
 const props = defineProps<{
-  level3AdminDivCode: number
-  level4AdminDivCode: number
-  minPrice: number
-  maxPrice: number
-  rentTypeId: number
+  level3AdminDivCode?: number
+  level4AdminDivCode?: number
+  minPrice?: number
+  maxPrice?: number
+  rentTypeId?: number
 }>()
 
 const router = useRouter()
 const message = useMessage()
 const cityStore = useCityStore()
 
-//筛选条件的类型
-type filterOptionResult = {
+//选项的类型
+type optionResult = {
   level3AdminDivs?: adminDivResult[]
   // 按拼音首字母分组的4级行政区划
   level4AdminDivGroups?: adminDivResult[][]
+  // 租赁类型
   rentType?: dictionaryDetailResult[]
 }
 
-//已选条件的类型
+//已选选项的类型
 type selectedOptionResult = {
   level3AdminDivCode?: number
   level4AdminDivCode?: number
@@ -52,13 +54,19 @@ type selectedOptionResult = {
 }
 
 //筛选条件的值
-const filterOption = reactive<filterOptionResult>({})
+const option = reactive<optionResult>({})
 
 //已选条件的值
-const selectedOption = reactive<selectedOptionResult>({})
+const selectedOption = reactive<selectedOptionResult>({
+  level3AdminDivCode: props.level3AdminDivCode,
+  level4AdminDivCode: props.level4AdminDivCode,
+  minPrice: props.minPrice,
+  maxPrice: props.maxPrice,
+  rentTypeId: props.rentTypeId,
+})
 
 //获取筛选条件
-async function getFilterOption() {
+async function getOption() {
   try {
     const [res1, res2] = await Promise.all([
       adminDivApi.getList({
@@ -70,27 +78,29 @@ async function getFilterOption() {
     ])
 
     if (res1) {
-      filterOption.level3AdminDivs = res1.data.list
+      option.level3AdminDivs = res1.data.list
     }
     if (res2) {
-      filterOption.rentType = res2.data.list
+      option.rentType = res2.data.list
     }
   } catch (error) {
-    message.error("获取筛选条件失败")
+    message.error("获取筛选选项失败，请刷新页面重试")
     console.error(error)
   }
 }
 
-getFilterOption()
+getOption()
 
-//清空已选条件
+//清空已选选项
 const clearSelectedOption = () => {
   selectedOption.level3AdminDivCode = undefined
   selectedOption.level4AdminDivCode = undefined
   selectedOption.minPrice = null
   selectedOption.maxPrice = null
   selectedOption.rentTypeId = undefined
-  query()
+  //更新url的query参数
+  updateQuery()
+  getData()
 }
 
 const data: forRentListResult = reactive({
@@ -102,8 +112,6 @@ const data: forRentListResult = reactive({
     total_records: 0,
   },
 })
-
-getData()
 
 async function getData() {
   const res = await forRentApi.getList({
@@ -124,27 +132,28 @@ async function getData() {
   }
 }
 
+getData()
+
 function getDetail(id: number) {
-  const href = router.resolve({
+  const detail = router.resolve({
     name: "房源详情",
     params: { id },
   })
-  window.open(href.href, "_blank")
+  window.open(detail.href, "_blank")
 }
 
-//用于拆选条件变化后的查询
-function query() {
+// 更新url的query参数
+function updateQuery() {
   router.push({
     name: router.currentRoute.value.name,
     query: {
-      l3: selectedOption.level3AdminDivCode ?? undefined,
-      l4: selectedOption.level4AdminDivCode ?? undefined,
+      l3: selectedOption.level3AdminDivCode,
+      l4: selectedOption.level4AdminDivCode,
       min: selectedOption.minPrice ?? undefined,
       max: selectedOption.maxPrice ?? undefined,
-      rt: selectedOption.rentTypeId ?? undefined,
+      rt: selectedOption.rentTypeId,
     },
   })
-  getData()
 }
 
 //验证价格区间是否合法
@@ -155,10 +164,11 @@ function validatePrice() {
     selectedOption.maxPrice < selectedOption.minPrice
   ) {
     message.error("最高价必须大于最低价，请修改")
-
     return
   }
-  query()
+  // 更新url的query参数
+  updateQuery()
+  getData()
 }
 
 // 如果城市改变，则重新进入到当前页面、获取筛选条件、获取新数据
@@ -166,67 +176,33 @@ watch(
   () => cityStore.code,
   () => {
     router.push({ name: router.currentRoute.value.name })
-    getFilterOption()
+    getOption()
     getData()
   }
 )
 
-// 如果props.level3AdminDivCode改变，
-// 则更新selectedOption.level3AdminDivCode的值
-// 并获取筛选条件中的level4AdminDiv
+// 如果已选的3级行政区划改变
 watch(
-  () => props.level3AdminDivCode,
-  async () => {
-    query()
-    
-  },
-  { immediate: true }
-)
-
-watch(
-  () => props.level4AdminDivCode,
-  () => {
-    selectedOption.level4AdminDivCode = props.level4AdminDivCode
-  }
-)
-
-// 如果props.minPrice改变，
-// 则更新selectedOption.minPrice的值，
-// 并重新获取数据
-watch(
-  () => props.minPrice,
-  (newValue) => {
-    if (newValue) {
-      selectedOption.minPrice = newValue
-      getData()
+  () => selectedOption.level3AdminDivCode,
+  async (newValue) => {
+    // 清空所有的4级行政区划选项
+    option.level4AdminDivGroups = undefined
+    // 清空已选的4级行政区划
+    selectedOption.level4AdminDivCode = undefined
+    // 更新url的query参数
+    updateQuery()
+    // 如果选中的3级行政区划为空，则直接返回，不查询数据
+    if (!newValue) return
+    // 根据选中的3级行政区划，查询4级行政区划
+    const res = await adminDivApi.getList({
+      parent_code: newValue,
+    })
+    // 如果查询成功，则更新4级行政区划选项组的值
+    if (res) {
+      option.level4AdminDivGroups = groupByPrefix(res.data.list)
     }
   },
   { immediate: true }
-)
-
-// 如果props.maxPrice改变，
-// 则更新selectedOption.maxPrice的值，
-// 并重新获取数据
-watch(
-  () => props.maxPrice,
-  (newValue) => {
-    if (newValue) {
-      selectedOption.maxPrice = newValue
-      getData()
-    }
-  },
-  { immediate: true }
-)
-
-// 如果props.rentTypeId改变，
-// 则更新selectedOption.rentTypeId的值，
-// 并重新获取数据
-watch(
-  () => props.rentTypeId,
-  () => {
-    selectedOption.rentTypeId = props.rentTypeId
-    getData()
-  }
 )
 
 // 如果data.paging.page改变，
@@ -241,10 +217,6 @@ watch(
 </script>
 
 <template>
-  <div>props l3:{{ props.level3AdminDivCode }}</div>
-  <div>selected option l3:{{ selectedOption.level3AdminDivCode }}</div>
-  <div>props l4:{{ props.level4AdminDivCode }}</div>
-  <div>selected option l4:{{ selectedOption.level4AdminDivCode }}</div>
   <!-- 头部区域 -->
   <Header />
 
@@ -269,7 +241,8 @@ watch(
             @click="
               () => {
                 selectedOption.level3AdminDivCode = undefined
-                query()
+                updateQuery()
+                getData()
               }
             "
             :color="selectedOption.level3AdminDivCode ? '' : 'red'"
@@ -278,12 +251,13 @@ watch(
           </n-button>
           <!-- 具体的3级行政区划 -->
           <n-button
-            v-for="level3AdminDiv in filterOption.level3AdminDivs"
+            v-for="level3AdminDiv in option.level3AdminDivs"
             quaternary
             @click="
               () => {
                 selectedOption.level3AdminDivCode = level3AdminDiv.code
-                query()
+                updateQuery()
+                getData()
               }
             "
             :color="
@@ -306,7 +280,7 @@ watch(
         <!-- 行数据 -->
         <n-flex
           :size="[3, 3]"
-          v-for="level4AdminDivGroup in filterOption.level4AdminDivGroups"
+          v-for="level4AdminDivGroup in option.level4AdminDivGroups"
         >
           <!-- 字母 -->
           <n-flex style="margin: auto auto; padding: 0; font-weight: 600">
@@ -320,7 +294,8 @@ watch(
               @click="
                 () => {
                   selectedOption.level4AdminDivCode = level4AdminDiv.code
-                  query()
+                  updateQuery()
+                  getData()
                 }
               "
               :color="
@@ -328,7 +303,7 @@ watch(
                   ? 'red'
                   : ''
               "
-              style="padding-left: 4px; padding-right: 4px"
+              style="padding-left: 10px; padding-right: 10px"
             >
               {{ level4AdminDiv.name }}
             </n-button>
@@ -344,9 +319,10 @@ watch(
           quaternary
           @click="
             () => {
-              selectedOption.minPrice = undefined
-              selectedOption.maxPrice = undefined
-              query()
+              selectedOption.minPrice = null
+              selectedOption.maxPrice = null
+              updateQuery()
+              getData()
             }
           "
           :color="
@@ -389,7 +365,8 @@ watch(
           @click="
             () => {
               selectedOption.rentTypeId = undefined
-              query()
+              updateQuery()
+              getData()
             }
           "
           :color="selectedOption.rentTypeId ? '' : 'red'"
@@ -398,13 +375,14 @@ watch(
         </n-button>
         <!-- 具体的租赁类型 -->
         <n-button
-          v-for="rentType in filterOption.rentType"
+          v-for="rentType in option.rentType"
           quaternary
           :color="selectedOption.rentTypeId === rentType.id ? 'red' : ''"
           @click="
             () => {
               selectedOption.rentTypeId = rentType.id
-              query()
+              updateQuery()
+              getData()
             }
           "
         >
@@ -414,7 +392,9 @@ watch(
 
       <!-- 清空筛选条件 -->
       <n-flex :size="[3, 3]" style="margin: 5px 0">
-        <n-button @click="clearSelectedOption">清空筛选条件</n-button>
+        <n-button strong secondary @click="clearSelectedOption"
+          >清空筛选条件</n-button
+        >
       </n-flex>
     </n-flex>
 
@@ -438,9 +418,7 @@ watch(
               preview-disabled
               @click="
                 () => {
-                  if (item.id) {
-                    getDetail(item.id)
-                  }
+                  if (item.id) getDetail(item.id)
                 }
               "
               style="cursor: pointer"
@@ -455,12 +433,11 @@ watch(
                   <span
                     @click="
                       () => {
-                        if (item.id) {
-                          getDetail(item.id)
-                        }
+                        if (item.id) getDetail(item.id)
                       }
                     "
                     class="description-title"
+                    style="cursor: pointer"
                   >
                     {{ item.description }}
                   </span>
@@ -482,8 +459,9 @@ watch(
                     item.kitchen
                   "
                   style="color: #ccc"
-                  >|</span
                 >
+                  |
+                </span>
                 <span
                   v-if="
                     item.bedroom ||
@@ -518,8 +496,11 @@ watch(
                   {{ item.gender_restriction?.value }}
                 </span>
                 <span v-if="item.orientation" style="color: #ccc"> | </span>
-                <span v-if="item.orientation">
-                  朝{{ item.orientation?.value }}
+                <span>
+                  <span v-if="item.orientation?.value.length === 1">朝</span>
+                  <span v-if="item.orientation">
+                    {{ item.orientation?.value }}
+                  </span>
                 </span>
                 <span v-if="item.tenant" style="color: #ccc"> | </span>
                 <span v-if="item.tenant">{{ item.tenant }}</span>
@@ -584,10 +565,6 @@ watch(
 </template>
 
 <style scoped lang="scss">
-.description-title {
-  cursor: pointer;
-}
-
 .description-title:hover {
   color: green;
 }

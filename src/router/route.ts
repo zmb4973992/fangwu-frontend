@@ -20,11 +20,23 @@ const routes: RouteRecordRaw[] = [
         name: "房源列表",
         component: () => import("@/view/for-rent/list.vue"),
         props: (route) => ({
-          level3AdminDivCode: Number(route.query.l3),
-          level4AdminDivCode: Number(route.query.l4),
-          minPrice: Number(route.query.min),
-          maxPrice: Number(route.query.max),
-          rentTypeId: Number(route.query.rt),
+          // 将参数转换成number类型，便于在组件中使用
+          // 如果参数不是数字，则返回undefined（不传给组件）
+          level3AdminDivCode: isNaN(Number(route.query.l3))
+            ? undefined
+            : Number(route.query.l3),
+          level4AdminDivCode: isNaN(Number(route.query.l4))
+            ? undefined
+            : Number(route.query.l4),
+          minPrice: isNaN(Number(route.query.min))
+            ? undefined
+            : Number(route.query.min),
+          maxPrice: isNaN(Number(route.query.max))
+            ? undefined
+            : Number(route.query.max),
+          rentTypeId: isNaN(Number(route.query.rt))
+            ? undefined
+            : Number(route.query.rt),
         }),
       },
       {

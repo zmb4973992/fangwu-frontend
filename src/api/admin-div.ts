@@ -10,6 +10,7 @@ type get = {
 type getList = pagingQuery & {
   parent_code?: number
   level?: number
+  grandpa_code?: number
 }
 
 //
