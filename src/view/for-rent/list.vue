@@ -67,31 +67,33 @@ const selectedOption = reactive<selectedOptionResult>({
 
 //获取筛选条件
 async function getOption() {
-  try {
-    const [res1, res2, res3] = await Promise.all([
-      adminDivApi.getList({
-        parent_code: cityStore.code,
-      }),
-      dictionaryDetailApi.getList({
-        dictionary_type_value: "租赁类型",
-      }),
-      adminDivApi.getList({
-        parent_code: selectedOption.level3AdminDivCode,
-      }),
-    ])
+  // 获取3级行政区划
+  const res1 = await adminDivApi.getList({
+    page_size: 10000,
+    parent_code: cityStore.code,
+  })
+  if (res1) {
+    option.level3AdminDivs = res1.data.list
+  }
 
-    if (res1) {
-      option.level3AdminDivs = res1.data.list
-    }
-    if (res2) {
-      option.rentType = res2.data.list
-    }
+  // 获取租赁类型
+  const res2 = await dictionaryDetailApi.getList({
+    page_size: 100,
+    dictionary_type_value: "租赁类型",
+  })
+  if (res2) {
+    option.rentType = res2.data.list
+  }
+
+  // 获取4级行政区划
+  if (selectedOption.level3AdminDivCode) {
+    const res3 = await adminDivApi.getList({
+      page_size: 10000,
+      parent_code: selectedOption.level3AdminDivCode,
+    })
     if (res3) {
       option.level4AdminDivGroups = groupByPrefix(res3.data.list)
     }
-  } catch (error) {
-    message.error("获取筛选选项失败，请刷新页面重试")
-    console.error(error)
   }
 }
 
@@ -181,6 +183,7 @@ function validatePrice() {
 watch(
   () => cityStore.code,
   () => {
+    selectedOption.level3AdminDivCode = undefined
     option.level4AdminDivGroups = undefined
     selectedOption.level4AdminDivCode = undefined
     router.push({ name: router.currentRoute.value.name })
@@ -211,7 +214,7 @@ watch(
     if (res) {
       option.level4AdminDivGroups = groupByPrefix(res.data.list)
     }
-  },
+  }
 )
 
 // 如果data.paging.page改变，
@@ -226,7 +229,6 @@ watch(
 </script>
 
 <template>
-  {{ selectedOption.level4AdminDivCode }}
   <!-- 头部区域 -->
   <Header />
 

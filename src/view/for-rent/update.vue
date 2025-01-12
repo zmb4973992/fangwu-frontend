@@ -123,7 +123,7 @@ const formData = reactive({
   orientation: <number | null>null,
   tenant: <number | null>null,
   //增加backendId字段，用于上传图片时携带后端生成的id
-  files: <(UploadFileInfo & { backendId: number })[]>[],
+  files: <(UploadFileInfo & { backendId: number; sort: number })[]>[],
 })
 
 const formRules = reactive<FormRules>({
@@ -245,6 +245,7 @@ function handleUploadFinish({
         name: file.name,
         status: "finished",
         backendId: response.data[i].file_id,
+        sort: formData.files.length + 1,
       })
     }
   }
@@ -308,7 +309,6 @@ async function submitForm() {
       formData.genderRestriction == null ? 0 : formData.genderRestriction,
     mobile_phone: formData.mobilePhone == null ? "" : formData.mobilePhone,
     wechat_id: formData.wechatId == null ? "" : formData.wechatId,
-    file_ids: formData.files.map((item) => item.backendId),
     level_1_admin_div: 11,
     level_2_admin_div: 1101,
     level_3_admin_div:
@@ -325,6 +325,13 @@ async function submitForm() {
     total_floor: formData.totalFloor == null ? 0 : formData.totalFloor,
     orientation: formData.orientation == null ? 0 : formData.orientation,
     tenant: formData.tenant == null ? 0 : formData.tenant,
+    files: formData.files.map((item) => {
+      return {
+        id: item.backendId,
+        name: item.name,
+        sort: item.sort,
+      }
+    }),
   })
 
   //如果提交失败，则提示错误信息，并打印日志
@@ -386,6 +393,7 @@ async function getData() {
       url: res2?.data.files[i].url,
       status: "finished",
       backendId: res2?.data.files[i].id,
+      sort: res2?.data.files[i].sort,
     })
   }
 

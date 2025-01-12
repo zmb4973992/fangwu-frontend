@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import sideBar from "@/component/side-bar.vue"
 import Header from "@/component/header.vue"
-import useCityStore from "@/store/city"
 import {
   NFlex,
   useMessage,
@@ -22,7 +21,6 @@ import noImage from "@/asset/no-image.jpg"
 
 const router = useRouter()
 const message = useMessage()
-const cityStore = useCityStore()
 
 //筛选条件的类型
 type filterOptionResult = {
@@ -70,7 +68,7 @@ async function getData(type: string) {
         page: data.paging.page,
         page_size: data.paging.page_size,
         desc: true,
-        level_2_admin_div: cityStore.code,
+        created_by_myself: true,
       })
 
       if (res && res.data.list.length > 0) {

@@ -1,8 +1,9 @@
+import type { pagingRequest } from "@/type/paging"
 import type { commonResponse } from "@/type/response"
 import request from "@/util/request.ts"
 import type { AxiosResponse } from "axios"
 
-type getList = {
+type getList = pagingRequest & {
   dictionary_type_value: string
 }
 

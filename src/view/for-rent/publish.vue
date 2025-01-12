@@ -32,7 +32,6 @@ const message = useMessage()
 const router = useRouter()
 const userStore = useUserStore()
 const cityStore = useCityStore()
-
 const uploadUrl =
   import.meta.env.VITE_BASE_URL + import.meta.env.VITE_BATCH_UPLOAD_URL
 
@@ -57,7 +56,13 @@ const formData = reactive({
   orientation: <number | null>null,
   tenant: <number | null>null,
   //增加backendId字段，用于上传图片时携带后端生成的id
-  files: <(UploadFileInfo & { backendId: number })[]>[],
+  //sort字段用于排序
+  files: <
+    (UploadFileInfo & {
+      backendId: number
+      sort: number
+    })[]
+  >[],
   name: <string>"",
   gender: <number | null>null,
 })
@@ -118,7 +123,6 @@ async function getFormOption() {
         return {
           label: item.name,
           value: item.code,
-
         }
       })
     }
@@ -251,13 +255,14 @@ function handleUploadFinish({
 }) {
   //响应返回的response被转成了文本，需要通过Json.parse()转成对象
   const response = JSON.parse((event?.target as XMLHttpRequest).response)
-  if (response.code == 0) {
+  if (response.code === 0) {
     for (let i = 0; i < response.data.length; i++) {
       formData.files.push({
         id: file.id,
         name: file.name,
         status: "finished",
-        backendId: response.data[i].file_id,
+        backendId: response.data[i].id,
+        sort: formData.files.length + 1,
       })
     }
   }
@@ -320,7 +325,6 @@ async function submitForm() {
     gender_restriction: formData.genderRestriction ?? 0,
     mobile_phone: formData.mobilePhone ?? undefined,
     wechat_id: formData.wechatId ?? undefined,
-    file_ids: formData.files.map((item) => item.backendId),
     level_2_admin_div: cityStore.code,
     level_3_admin_div: formData.level3AdminDiv ?? undefined,
     level_4_admin_div: formData.level4AdminDiv ?? undefined,
@@ -336,7 +340,22 @@ async function submitForm() {
     tenant: formData.tenant ?? undefined,
     name: formData.name,
     gender: formData.gender ?? undefined,
+    files: formData.files.map((item) => {
+      return {
+        id: item.backendId,
+        sort: item.sort,
+      }
+    }),
   })
+
+  console.log(
+    formData.files.map((item) => {
+      return {
+        id: item.backendId,
+        sort: item.sort,
+      }
+    })
+  )
 
   //如果提交失败，则提示错误信息，并打印日志
   if (res?.code !== 0) {

@@ -125,10 +125,10 @@ const showContactButton = ref(true)
         <n-flex style="width: 700px">
           <n-carousel show-arrow>
             <img
-              v-for="img in data.files"
-              :key="img.url"
+              v-for="file in data.files"
+              :key="file.url"
               style="width: 100%; height: 525px; object-fit: contain"
-              :src="img.url"
+              :src="file.url"
             />
             <!-- 当前无图或只有一张图片时禁用按钮 -->
             <template #arrow="{ prev, next }">

@@ -1,3 +1,4 @@
+import type { file } from "@/type/file"
 import type { pagingRequest } from "@/type/paging.ts"
 import type { commonResponse, listResponse } from "@/type/response"
 import request from "@/util/request.ts"
@@ -11,7 +12,6 @@ type create = {
   gender_restriction: number
   mobile_phone?: string
   wechat_id?: string
-  file_ids?: number[]
   level_1_admin_div?: number
   level_2_admin_div?: number
   level_3_admin_div?: number
@@ -28,6 +28,7 @@ type create = {
   tenant?: number
   name?: string
   gender?: number
+  files?: file[]
 }
 
 // 更新出租信息的请求参数类型
