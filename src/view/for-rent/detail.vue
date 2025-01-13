@@ -310,7 +310,7 @@ const showContactButton = ref(true)
                 font-weight: 600;
               "
             >
-              查看联系方式
+              获取联系方式
             </n-button>
           </n-flex>
           <!-- 具体的联系方式 -->
